@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Preboard Critical Page</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page in-progress-page control-room">
+      <div class="frame">
+        <div class="sticky-wrap">
+          <header class="topbar">
+            <h1 class="page-title">In-Progress Flights</h1>
+            <div class="last-updated">Last Updated: 24 Dec 2025 11:02 AM</div>
+            <button class="pull-random" type="button" id="pull-random">Random Pull Team</button>
+            <button class="pull-random" type="button" id="toggle-teams">Hide Teams</button>
+            <div class="pull-count" id="pull-count-tile" role="button" tabindex="0">Pull Team <span id="pull-count">0</span></div>
+            <div class="pull-count alert-tile gate-change-count">Gate Change <span id="gate-change-count">0</span></div>
+            <div class="pull-count alert-tile enhanced-count">Enhanced Screening <span id="enhanced-count">0</span></div>
+          </header>
+          <h2 class="section-title">In Progress Flight <span>- Current On-going Flight - (<span id="gate-count">0</span>)</span></h2>
+          <div class="alert-ticker" aria-live="polite">
+            <span>PLEASE TAKE IMMEDIATE ACTION AT GATE B4</span>
+          </div>
+        </div>
+        <section class="section">
+          <div class="layout-split">
+            <div class="card-grid five-cols">
+            <article class="card flight-card gate-changed">
+              <div class="gate-banner">
+                <span class="gate-label">Gate <span class="old-gate">C18</span> → <span class="new-gate">E11</span></span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="gate-change-alert">Gate Change: C18 → E11 · Passengers Already at Gate</div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ KE 109</div>
+                <div class="card-sub">ICN</div>
+                <div class="status delayed">Delayed</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1127hrs</span>
+                  <span>STD: 1102hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: A320</span><span>Pax: 312</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 4</span>
+                  <span>10%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 10%"></span></div>
+                <div class="progress-row">
+                  <span>Team 7</span>
+                  <span>30%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 30%"></span></div>
+                <div class="progress-row">
+                  <span>Team 2</span>
+                  <span>25%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 25%"></span></div>
+                <div class="progress-row">
+                  <span>Team 10</span>
+                  <span>20%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 20%"></span></div>
+              </div>
+            </article>
+
+            <article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A9</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ QF 109</div>
+                <div class="card-sub">SYD</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1137hrs</span>
+                  <span>STD: 1207hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: B738</span><span>Pax: 262</span></div>
+                <div>Opens: 0635hrs · Closes: 0635hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 4</span>
+                  <span>20%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 20%"></span></div>
+                <div class="progress-row">
+                  <span>Team 2</span>
+                  <span>80%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 80%"></span></div>
+                <div class="progress-row">
+                  <span>Team 2</span>
+                  <span>70%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 70%"></span></div>
+                <div class="progress-row">
+                  <span>Team 10</span>
+                  <span>45%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 45%"></span></div>
+              </div>
+            </article>
+
+            <article class="card flight-card critical">
+              <div class="gate-banner">
+                <span class="gate-label">Gate B4</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ EK 109</div>
+                <div class="card-sub">DXB</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1112hrs</span>
+                  <span>STD: 1217hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: B738</span><span>Pax: 342</span></div>
+                <div>Opens: 0715hrs · Closes: 0715hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 7</span>
+                  <span>80%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 80%"></span></div>
+                <div class="progress-row">
+                  <span>Team 15</span>
+                  <span>10%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 10%"></span></div>
+                <div class="progress-row">
+                  <span>Team 14</span>
+                  <span>45%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 45%"></span></div>
+                <div class="progress-row">
+                  <span>Team 12</span>
+                  <span>20%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 20%"></span></div>
+              </div>
+            </article>
+
+            <article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A1</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ BA 109</div>
+                <div class="card-sub">LHR</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1147hrs</span>
+                  <span>STD: 1217hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: B777</span><span>Pax: 149</span></div>
+                <div>Opens: 0745hrs · Closes: 0745hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 16</span>
+                  <span>80%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 80%"></span></div>
+                <div class="progress-row">
+                  <span>Team 24</span>
+                  <span>30%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 30%"></span></div>
+                <div class="progress-row">
+                  <span>Team 23</span>
+                  <span>70%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 70%"></span></div>
+                <div class="progress-row">
+                  <span>Team 22</span>
+                  <span>90%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 90%"></span></div>
+              </div>
+            </article>
+
+            <article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A1</span>
+                <div class="gate-badges"><span class="badge badge-patdown">Patdown</span></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ AF 109</div>
+                <div class="card-sub">CDG</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1117hrs</span>
+                  <span>STD: 1227hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: B757</span><span>Pax: 240</span></div>
+                <div>Opens: 0810hrs · Closes: 0810hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 15</span>
+                  <span>70%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 70%"></span></div>
+                <div class="progress-row">
+                  <span>Team 23</span>
+                  <span>50%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 50%"></span></div>
+                <div class="progress-row">
+                  <span>Team 21</span>
+                  <span>35%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 35%"></span></div>
+                <div class="progress-row">
+                  <span>Team 10</span>
+                  <span>20%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 20%"></span></div>
+              </div>
+            </article>
+          
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A1</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ SQ 120</div>
+                <div class="card-sub">SIN</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1202hrs</span>
+                  <span>STD: 1137hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: A330</span><span>Pax: 234</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 11</span>
+                  <span>10%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 10%"></span></div>
+                <div class="progress-row">
+                  <span>Team 18</span>
+                  <span>60%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 60%"></span></div>
+                <div class="progress-row">
+                  <span>Team 18</span>
+                  <span>70%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 70%"></span></div>
+                <div class="progress-row">
+                  <span>Team 2</span>
+                  <span>70%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 70%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A3</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ MH 121</div>
+                <div class="card-sub">KUL</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1147hrs</span>
+                  <span>STD: 1157hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: B757</span><span>Pax: 205</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 7</span>
+                  <span>90%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 90%"></span></div>
+                <div class="progress-row">
+                  <span>Team 2</span>
+                  <span>25%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 25%"></span></div>
+                <div class="progress-row">
+                  <span>Team 12</span>
+                  <span>30%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 30%"></span></div>
+                <div class="progress-row">
+                  <span>Team 4</span>
+                  <span>60%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 60%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A1</span>
+                <div class="gate-badges"><span class="badge badge-patdown">Patdown</span></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ TG 122</div>
+                <div class="card-sub">BKK</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1122hrs</span>
+                  <span>STD: 1117hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: A321</span><span>Pax: 275</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 24</span>
+                  <span>55%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 55%"></span></div>
+                <div class="progress-row">
+                  <span>Team 10</span>
+                  <span>70%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 70%"></span></div>
+                <div class="progress-row">
+                  <span>Team 22</span>
+                  <span>80%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 80%"></span></div>
+                <div class="progress-row">
+                  <span>Team 12</span>
+                  <span>45%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 45%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A7</span>
+                <div class="gate-badges"><span class="badge badge-patdown">Patdown</span><span class="badge badge-enhanced">Enhanced</span></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ CX 123</div>
+                <div class="card-sub">HKG</div>
+                <div class="status delayed">Delayed</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1112hrs</span>
+                  <span>STD: 1112hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: B777</span><span>Pax: 215</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 6</span>
+                  <span>90%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 90%"></span></div>
+                <div class="progress-row">
+                  <span>Team 5</span>
+                  <span>30%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 30%"></span></div>
+                <div class="progress-row">
+                  <span>Team 12</span>
+                  <span>50%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 50%"></span></div>
+                <div class="progress-row">
+                  <span>Team 15</span>
+                  <span>45%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 45%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A8</span>
+                <div class="gate-badges"><span class="badge badge-patdown">Patdown</span><span class="badge badge-enhanced">Enhanced</span></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ JL 124</div>
+                <div class="card-sub">NRT</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1222hrs</span>
+                  <span>STD: 1157hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: A330</span><span>Pax: 150</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 10</span>
+                  <span>70%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 70%"></span></div>
+                <div class="progress-row">
+                  <span>Team 6</span>
+                  <span>80%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 80%"></span></div>
+                <div class="progress-row">
+                  <span>Team 20</span>
+                  <span>40%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 40%"></span></div>
+                <div class="progress-row">
+                  <span>Team 13</span>
+                  <span>45%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 45%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A10</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ KE 125</div>
+                <div class="card-sub">ICN</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1142hrs</span>
+                  <span>STD: 1212hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: A350</span><span>Pax: 355</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 23</span>
+                  <span>90%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 90%"></span></div>
+                <div class="progress-row">
+                  <span>Team 4</span>
+                  <span>80%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 80%"></span></div>
+                <div class="progress-row">
+                  <span>Team 7</span>
+                  <span>80%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 80%"></span></div>
+                <div class="progress-row">
+                  <span>Team 9</span>
+                  <span>60%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 60%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A12</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ QF 126</div>
+                <div class="card-sub">SYD</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1122hrs</span>
+                  <span>STD: 1217hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: A350</span><span>Pax: 359</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 16</span>
+                  <span>10%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 10%"></span></div>
+                <div class="progress-row">
+                  <span>Team 15</span>
+                  <span>80%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 80%"></span></div>
+                <div class="progress-row">
+                  <span>Team 13</span>
+                  <span>55%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 55%"></span></div>
+                <div class="progress-row">
+                  <span>Team 9</span>
+                  <span>10%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 10%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate B1</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ EK 127</div>
+                <div class="card-sub">DXB</div>
+                <div class="status delayed">Delayed</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1122hrs</span>
+                  <span>STD: 1222hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: B757</span><span>Pax: 141</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 20</span>
+                  <span>50%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 50%"></span></div>
+                <div class="progress-row">
+                  <span>Team 6</span>
+                  <span>45%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 45%"></span></div>
+                <div class="progress-row">
+                  <span>Team 21</span>
+                  <span>45%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 45%"></span></div>
+                <div class="progress-row">
+                  <span>Team 2</span>
+                  <span>30%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 30%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate B3</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ BA 128</div>
+                <div class="card-sub">LHR</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1217hrs</span>
+                  <span>STD: 1142hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: A321</span><span>Pax: 309</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 18</span>
+                  <span>35%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 35%"></span></div>
+                <div class="progress-row">
+                  <span>Team 20</span>
+                  <span>90%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 90%"></span></div>
+                <div class="progress-row">
+                  <span>Team 17</span>
+                  <span>90%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 90%"></span></div>
+                <div class="progress-row">
+                  <span>Team 21</span>
+                  <span>30%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 30%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate B5</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ AF 129</div>
+                <div class="card-sub">CDG</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1212hrs</span>
+                  <span>STD: 1232hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: B738</span><span>Pax: 207</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 22</span>
+                  <span>40%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 40%"></span></div>
+                <div class="progress-row">
+                  <span>Team 4</span>
+                  <span>40%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 40%"></span></div>
+                <div class="progress-row">
+                  <span>Team 19</span>
+                  <span>20%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 20%"></span></div>
+                <div class="progress-row">
+                  <span>Team 8</span>
+                  <span>55%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 55%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A1</span>
+                <div class="gate-badges"><span class="badge badge-patdown">Patdown</span><span class="badge badge-enhanced">Enhanced</span></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ LH 130</div>
+                <div class="card-sub">FRA</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1137hrs</span>
+                  <span>STD: 1137hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: B767</span><span>Pax: 182</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 24</span>
+                  <span>70%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 70%"></span></div>
+                <div class="progress-row">
+                  <span>Team 22</span>
+                  <span>10%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 10%"></span></div>
+                <div class="progress-row">
+                  <span>Team 6</span>
+                  <span>35%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 35%"></span></div>
+                <div class="progress-row">
+                  <span>Team 16</span>
+                  <span>35%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 35%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A1</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ KL 131</div>
+                <div class="card-sub">AMS</div>
+                <div class="status delayed">Delayed</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1142hrs</span>
+                  <span>STD: 1147hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: A321</span><span>Pax: 312</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 17</span>
+                  <span>80%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 80%"></span></div>
+                <div class="progress-row">
+                  <span>Team 9</span>
+                  <span>20%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 20%"></span></div>
+                <div class="progress-row">
+                  <span>Team 11</span>
+                  <span>90%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 90%"></span></div>
+                <div class="progress-row">
+                  <span>Team 12</span>
+                  <span>30%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 30%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate B10</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ IB 132</div>
+                <div class="card-sub">MAD</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1147hrs</span>
+                  <span>STD: 1127hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: B738</span><span>Pax: 334</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 14</span>
+                  <span>55%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 55%"></span></div>
+                <div class="progress-row">
+                  <span>Team 1</span>
+                  <span>55%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 55%"></span></div>
+                <div class="progress-row">
+                  <span>Team 14</span>
+                  <span>35%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 35%"></span></div>
+                <div class="progress-row">
+                  <span>Team 8</span>
+                  <span>35%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 35%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate A1</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ NZ 133</div>
+                <div class="card-sub">AKL</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1137hrs</span>
+                  <span>STD: 1112hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: B737</span><span>Pax: 309</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 1</span>
+                  <span>35%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 35%"></span></div>
+                <div class="progress-row">
+                  <span>Team 18</span>
+                  <span>30%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 30%"></span></div>
+                <div class="progress-row">
+                  <span>Team 15</span>
+                  <span>30%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 30%"></span></div>
+                <div class="progress-row">
+                  <span>Team 24</span>
+                  <span>30%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 30%"></span></div>
+              </div>
+            </article>
+<article class="card flight-card">
+              <div class="gate-banner">
+                <span class="gate-label">Gate C3</span>
+                <div class="gate-badges"></div>
+                <div class="gate-actions"></div></div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ AI 134</div>
+                <div class="card-sub">DEL</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 1227hrs</span>
+                  <span>STD: 1122hrs</span>
+                </div>
+                <div class="flight-meta"><span>Type: A330</span><span>Pax: 318</span></div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 19</span>
+                  <span>80%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 80%"></span></div>
+                <div class="progress-row">
+                  <span>Team 12</span>
+                  <span>20%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 20%"></span></div>
+                <div class="progress-row">
+                  <span>Team 9</span>
+                  <span>90%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 90%"></span></div>
+                <div class="progress-row">
+                  <span>Team 3</span>
+                  <span>50%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 50%"></span></div>
+              </div>
+            </article>
+            </div>
+            <aside class="alert-panel">
+              <h3>Active Alerts</h3>
+              <div class="alert-item alert-gate">
+                <div>Gate Change</div>
+                <strong>C18 → E11</strong>
+              </div>
+              <div class="alert-item alert-enhanced">
+                <div>Enhanced Screening</div>
+                <strong>Gate B9</strong>
+              </div>
+              <div class="alert-item alert-pull">
+                <div>Pull Team</div>
+                <strong>Gate D2</strong>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </div>
+    </main>
+    <div class="modal-backdrop"></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Action Details">
+      <div class="modal-header">
+        <h2 class="modal-title">Action Details</h2>
+        <button class="modal-close" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-summary">
+          <div>
+            <span>Gate</span>
+            <span class="modal-gate">Gate</span>
+          </div>
+          <div>
+            <span>Next Gate</span>
+            <span class="modal-next-gate">-</span>
+          </div>
+          <div>
+            <span>ETD</span>
+            <span class="modal-etd">-</span>
+          </div>
+          <div>
+            <span>STD</span>
+            <span class="modal-std">-</span>
+          </div>
+        </div>
+        <div class="modal-flight">
+          <div><span>Flight No.</span><span class="modal-flight-no">-</span></div>
+          <div><span>Gate Reporting</span><span class="modal-report-time">-</span></div>
+        </div>
+        <div class="modal-team">
+          <div>Team Members</div>
+          <ul class="modal-team-list"></ul>
+        </div>
+        <div class="modal-team modal-close-team">
+          <div>Close Gate Officers</div>
+          <ul class="modal-close-list"></ul>
+        </div>
+        <button class="modal-action" type="button">Pull Completed</button>
+      </div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

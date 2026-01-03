@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Preboard Critical Page</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <div class="frame">
+        <header class="topbar">
+          <h1 class="page-title">Preboard Ops Control Dashboard</h1>
+          <div class="last-updated">Last Updated: 24 Dec 2025 11:02 AM</div>
+          <a class="nav-button" href="in-progress.html">In-Progress Flights</a>
+          <div class="tabs" role="tablist">
+            <button class="tab" type="button" role="tab" aria-selected="false">All</button>
+            <button class="tab active" type="button" role="tab" aria-selected="true">T1</button>
+            <button class="tab" type="button" role="tab" aria-selected="false">T2</button>
+            <button class="tab" type="button" role="tab" aria-selected="false">T3</button>
+            <button class="tab" type="button" role="tab" aria-selected="false">T4</button>
+          </div>
+        </header>
+
+        <section class="section alert-section">
+          <h2 class="section-title">
+            Officer Task <span>- 30Mins Before RT Time Teams Not Accepting Task</span>
+          </h2>
+          <div class="card-grid">
+            <article class="card compact">
+              <div class="card-header">
+                <div class="card-title">Team 12 (3)</div>
+                <div class="card-sub">Gate B12</div>
+              </div>
+              <div class="change-badge">Updated</div>
+              <div class="changed-field">Gate: <span class="old">A9</span> → <span class="old">C6</span> → <span class="new">B12</span></div>
+              <div class="card-meta">
+                <span>SQ 215</span>
+                <span>SGN</span>
+              </div>
+              <div class="card-times changed-field">
+                <span>ETD <span class="old">0610hrs</span> → <span class="old">0640hrs</span> → <span class="new">0705hrs</span></span>
+                <span>STD 0740hrs</span>
+              </div>
+            </article>
+            <article class="card compact">
+              <div class="card-header">
+                <div class="card-title">Team 7 (3)</div>
+                <div class="card-sub sandwich-gate">Gate D7</div>
+              </div>
+              <div class="card-meta">
+                <span>MH 482</span>
+                <span>KUL</span>
+              </div>
+              <div class="card-times">
+                <span>ETD 0900hrs</span>
+                <span>STD 0935hrs</span>
+              </div>
+            </article>
+            <article class="card compact">
+              <div class="card-header">
+                <div class="card-title">Team 18 (3)</div>
+                <div class="card-sub sandwich-gate">Gate D7</div>
+              </div>
+              <div class="card-meta">
+                <span>TG 739</span>
+                <span>BKK</span>
+              </div>
+              <div class="card-times">
+                <span>ETD 0900hrs</span>
+                <span>STD 0935hrs</span>
+              </div>
+            </article>
+            <article class="card compact">
+              <div class="card-header">
+                <div class="card-title">Team 3 (3)</div>
+                <div class="card-sub">Gate E3</div>
+              </div>
+              <div class="change-badge">Updated</div>
+              <div class="changed-field">Gate: <span class="old">D2</span> <span class="new">E3</span></div>
+              <div class="card-meta">
+                <span>CX 918</span>
+                <span>HKG</span>
+              </div>
+              <div class="card-times changed-field">
+                <span>ETD <span class="old">0930hrs</span> <span class="new">1010hrs</span></span>
+                <span>STD 1030hrs</span>
+              </div>
+            </article>
+            <article class="card compact">
+              <div class="card-header">
+                <div class="card-title">Team 9 (3)</div>
+                <div class="card-sub">Gate F1</div>
+              </div>
+              <div class="change-badge">Updated</div>
+              <div class="changed-field">Gate: <span class="old">E6</span> <span class="new">F1</span></div>
+              <div class="card-meta">
+                <span>JL 156</span>
+                <span>NRT</span>
+              </div>
+              <div class="card-times changed-field">
+                <span>ETD <span class="old">1045hrs</span> <span class="new">1115hrs</span></span>
+                <span>STD 1200hrs</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2 class="section-title">In Progress Flight <span>- Current On-going Flight</span></h2>
+          <div class="card-grid">
+            <article class="card flight-card">
+              <div class="gate-banner">Gate C18</div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ KE 109</div>
+                <div class="card-sub">ICN</div>
+                <div class="status delayed">Delayed</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 0800hrs</span>
+                  <span>STD: 0800hrs</span>
+                </div>
+                <div>Opens: 0610hrs · Closes: 0610hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 21</span>
+                  <span>35%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 35%"></span></div>
+                <div class="progress-row">
+                  <span>Team 19</span>
+                  <span>20%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 20%"></span></div>
+                <div class="progress-row">
+                  <span>Team 5</span>
+                  <span>20%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 20%"></span></div>
+                <div class="progress-row">
+                  <span>Team 15</span>
+                  <span>45%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 45%"></span></div>
+              </div>
+            </article>
+
+            <article class="card flight-card">
+              <div class="gate-banner">Gate A9</div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ QF 109</div>
+                <div class="card-sub">SYD</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 0800hrs</span>
+                  <span>STD: 0800hrs</span>
+                </div>
+                <div>Opens: 0635hrs · Closes: 0635hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 6</span>
+                  <span>50%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 50%"></span></div>
+                <div class="progress-row">
+                  <span>Team 14</span>
+                  <span>70%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 70%"></span></div>
+                <div class="progress-row">
+                  <span>Team 17</span>
+                  <span>40%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 40%"></span></div>
+                <div class="progress-row">
+                  <span>Team 12</span>
+                  <span>40%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 40%"></span></div>
+              </div>
+            </article>
+
+            <article class="card flight-card critical">
+              <div class="gate-banner">Gate B4</div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ EK 109</div>
+                <div class="card-sub">DXB</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 0800hrs</span>
+                  <span>STD: 0800hrs</span>
+                </div>
+                <div>Opens: 0715hrs · Closes: 0715hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 8</span>
+                  <span>0%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 0%"></span></div>
+                <div class="progress-row">
+                  <span>Team 7</span>
+                  <span>0%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 0%"></span></div>
+                <div class="progress-row">
+                  <span>Team 18</span>
+                  <span>0%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 0%"></span></div>
+                <div class="progress-row">
+                  <span>Team 4</span>
+                  <span>0%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 0%"></span></div>
+              </div>
+            </article>
+
+            <article class="card flight-card">
+              <div class="gate-banner">Gate D2</div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ BA 109</div>
+                <div class="card-sub">LHR</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 0800hrs</span>
+                  <span>STD: 0800hrs</span>
+                </div>
+                <div>Opens: 0745hrs · Closes: 0745hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 16</span>
+                  <span>20%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 20%"></span></div>
+                <div class="progress-row">
+                  <span>Team 6</span>
+                  <span>40%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 40%"></span></div>
+                <div class="progress-row">
+                  <span>Team 17</span>
+                  <span>20%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 20%"></span></div>
+                <div class="progress-row">
+                  <span>Team 20</span>
+                  <span>25%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 25%"></span></div>
+              </div>
+            </article>
+
+            <article class="card flight-card">
+              <div class="gate-banner">Gate E11</div>
+              <div class="flight-top">
+                <div class="flight-tag">✈ AF 109</div>
+                <div class="card-sub">CDG</div>
+                <div class="status on-time">On-Time</div>
+              </div>
+              <div class="flight-details">
+                <div class="flight-times">
+                  <span>ETD: 0800hrs</span>
+                  <span>STD: 0800hrs</span>
+                </div>
+                <div>Opens: 0810hrs · Closes: 0810hrs</div>
+              </div>
+              <div class="flight-progress">
+                <div class="card-sub">Assigned Teams</div>
+                <div class="progress-row">
+                  <span>Team 17</span>
+                  <span>90%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 90%"></span></div>
+                <div class="progress-row">
+                  <span>Team 18</span>
+                  <span>50%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 50%"></span></div>
+                <div class="progress-row">
+                  <span>Team 11</span>
+                  <span>45%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 45%"></span></div>
+                <div class="progress-row">
+                  <span>Team 2</span>
+                  <span>10%</span>
+                </div>
+                <div class="progress-bar"><span style="width: 10%"></span></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2 class="section-title">
+            Flight Not Assign Yet <span>- Next 1 Hour Flight Without Any Teams Assigned</span>
+          </h2>
+          <div class="card-grid">
+            <article class="card muted-card compact">
+              <div class="card-header">
+                <div class="card-title">LH 604</div>
+                <div class="card-sub sandwich-gate">Gate B9</div>
+              </div>
+              <div class="sandwich-badge">Sandwich Gate</div>
+              <div class="card-meta">
+                <span>FRA</span>
+              </div>
+              <div class="card-times">
+                <span>ETD 1205hrs</span>
+                <span>STD 1240hrs</span>
+              </div>
+            </article>
+            <article class="card muted-card compact">
+              <div class="card-header">
+                <div class="card-title">KL 321</div>
+                <div class="card-sub sandwich-gate">Gate B9</div>
+              </div>
+              <div class="sandwich-badge">Sandwich Gate</div>
+              <div class="card-meta">
+                <span>AMS</span>
+              </div>
+              <div class="card-times">
+                <span>ETD 1205hrs</span>
+                <span>STD 1240hrs</span>
+              </div>
+            </article>
+            <article class="card muted-card compact">
+              <div class="card-header">
+                <div class="card-title">IB 507</div>
+                <div class="card-sub">Gate D5</div>
+              </div>
+              <div class="card-meta">
+                <span>MAD</span>
+              </div>
+              <div class="card-times">
+                <span>ETD 1255hrs</span>
+                <span>STD 1315hrs</span>
+              </div>
+            </article>
+            <article class="card muted-card compact">
+              <div class="card-header">
+                <div class="card-title">NZ 842</div>
+                <div class="card-sub">Gate A2</div>
+              </div>
+              <div class="card-meta">
+                <span>MEL</span>
+              </div>
+              <div class="card-times">
+                <span>ETD 1330hrs</span>
+                <span>STD 1355hrs</span>
+              </div>
+            </article>
+            <article class="card muted-card compact">
+              <div class="card-header">
+                <div class="card-title">AI 274</div>
+                <div class="card-sub">Gate F4</div>
+              </div>
+              <div class="card-meta">
+                <span>AKL</span>
+              </div>
+              <div class="card-times">
+                <span>ETD 1345hrs</span>
+                <span>STD 1400hrs</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2 class="section-title">
+            Available teams <span>- Next 3 Hours Teams Did Not Assign to Any Flight</span>
+          </h2>
+          <div class="card-grid">
+            <article class="card compact">
+              <div class="card-header">
+                <div class="card-title">Team 21 (3)</div>
+                <div class="card-sub">Gate C12</div>
+              </div>
+              <div class="card-meta">
+                <span>PR 215</span>
+                <span>DEL</span>
+              </div>
+              <div class="card-times">
+                <span>ETD 0705hrs</span>
+                <span>STD 0740hrs</span>
+              </div>
+            </article>
+            <article class="card compact">
+              <div class="card-header">
+                <div class="card-title">Team 5 (3)</div>
+                <div class="card-sub">Gate E6</div>
+              </div>
+              <div class="card-meta">
+                <span>JL 482</span>
+                <span>BOM</span>
+              </div>
+              <div class="card-times">
+                <span>ETD 0815hrs</span>
+                <span>STD 0830hrs</span>
+              </div>
+            </article>
+            <article class="card compact">
+              <div class="card-header">
+                <div class="card-title">Team 16 (3)</div>
+                <div class="card-sub">Gate B7</div>
+              </div>
+              <div class="card-meta">
+                <span>UA 739</span>
+                <span>MNL</span>
+              </div>
+              <div class="card-times">
+                <span>ETD 0900hrs</span>
+                <span>STD 0935hrs</span>
+              </div>
+            </article>
+            <article class="card compact">
+              <div class="card-header">
+                <div class="card-title">Team 24 (3)</div>
+                <div class="card-sub">Gate A12</div>
+              </div>
+              <div class="card-meta">
+                <span>DL 918</span>
+                <span>KIX</span>
+              </div>
+              <div class="card-times">
+                <span>ETD 1010hrs</span>
+                <span>STD 1030hrs</span>
+              </div>
+            </article>
+            <article class="card compact">
+              <div class="card-header">
+                <div class="card-title">Team 11 (3)</div>
+                <div class="card-sub">Gate D9</div>
+              </div>
+              <div class="card-meta">
+                <span>AA 156</span>
+                <span>SFO</span>
+              </div>
+              <div class="card-times">
+                <span>ETD 1115hrs</span>
+                <span>STD 1200hrs</span>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
