@@ -131,17 +131,20 @@ const enablePullRandom = () => {
   if (!button) return;
 
   const pullIcon = `
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="11" />
-      <path d="M12.4 6.7a1.7 1.7 0 1 0-3.4 0 1.7 1.7 0 0 0 3.4 0z" fill="#111"/>
-      <path d="M9.7 10.2c-.5.2-.8.7-.7 1.2l.5 2 2.2 1.4-1.1 2.3-1.8-1.1-1.2 3h1.5l.8-2 2 1.2 1.6 3h1.8l-2-4-2.8-1.7.9-2 2.1 1.2h2.2v-1.5h-1.8l-2.6-1.5-1.2-1.5c-.3-.4-.9-.6-1.4-.4z" fill="#111"/>
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="9" cy="6.5" r="2"/>
+      <path d="M7 12l2.8-2 2.2 2 2.2-1.1"/>
+      <path d="M6 18l2-4 2.2 1.4L12 20"/>
+      <path d="M12.5 12.5l2.5 1.5 1.5 3"/>
+      <path d="M15.5 8.5h6"/>
+      <path d="M19 6l2.5 2.5L19 11"/>
     </svg>
   `;
   const closeIcon = `
-    <svg viewBox="0 0 24 24" aria-hidden="true">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
       <path d="M6 4h12v16H6z"/>
       <path d="M10 4v16"/>
-      <circle cx="14.5" cy="12" r="0.9" fill="#111"/>
+      <circle cx="14.5" cy="12" r="0.9"/>
     </svg>
   `;
 
