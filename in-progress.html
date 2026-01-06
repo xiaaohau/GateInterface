@@ -17,15 +17,23 @@
       <div class="frame">
         <div class="sticky-wrap">
           <header class="topbar">
-            <h1 class="page-title">In-Progress Flights</h1>
-            <div class="last-updated">Last Updated: 24 Dec 2025 11:02 AM</div>
-            <a class="nav-button" href="index.html">Click to OS Page</a>
-            <button class="pull-random" type="button" id="pull-random">Random Pull Team</button>
-            <button class="pull-random" type="button" id="toggle-teams">Hide Teams</button>
+            <div class="header-left">
+              <h1 class="page-title">In-Progress Flights</h1>
+              <div class="last-updated">Last Updated: 24 Dec 2025 11:02 AM</div>
+            </div>
+            <div class="header-right">
+              <a class="nav-button" href="index.html">Click to OS Page</a>
+              <div class="header-actions">
+                <button class="pull-random" type="button" id="pull-random">Random Pull Team</button>
+                <button class="pull-random" type="button" id="toggle-teams">Hide Teams</button>
+              </div>
+            </div>
+          </header>
+          <div class="metric-row">
             <div class="pull-count" id="pull-count-tile" role="button" tabindex="0">Pull Team <span id="pull-count">0</span></div>
             <div class="pull-count alert-tile gate-change-count">Gate Change <span id="gate-change-count">0</span></div>
             <div class="pull-count alert-tile enhanced-count">Enhanced Screening <span id="enhanced-count">0</span></div>
-          </header>
+          </div>
           <h2 class="section-title">In Progress Flight <span>- Current On-going Flight - (<span id="gate-count">0</span>)</span></h2>
           <div class="alert-ticker" aria-live="polite">
             <span>PLEASE TAKE IMMEDIATE ACTION AT GATE B4</span>
