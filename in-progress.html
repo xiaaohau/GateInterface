@@ -25,7 +25,7 @@
             <div class="header-right">
               <a class="nav-button" href="index.html">Click to OS Page</a>
               <div class="header-actions">
-                <button class="pull-random" type="button" id="assign-gate">Assign Gate</button>
+                <a class="pull-random" href="assign.html">Assign Gate</a>
                 <button class="pull-random" type="button" id="pull-random">Random Pull Team</button>
                 <button class="pull-random" type="button" id="toggle-teams">Hide Teams</button>
               </div>
@@ -967,30 +967,6 @@
           <ul class="modal-close-list"></ul>
         </div>
         <button class="modal-action" type="button">Pull Completed</button>
-      </div>
-    </div>
-    <div class="modal-backdrop assign-backdrop"></div>
-    <div class="modal assign-modal" role="dialog" aria-modal="true" aria-label="Assign Gate">
-      <div class="modal-header">
-        <h2>Assign Gate</h2>
-        <button class="modal-close assign-close" type="button">Close</button>
-      </div>
-      <div class="modal-body">
-        <div class="assign-header">
-          <label class="assign-label" for="assign-fs">Select FS</label>
-          <select id="assign-fs" class="assign-select">
-            <option value="">Select FS</option>
-            <option>FS - A. Rahman</option>
-            <option>FS - S. Lim</option>
-            <option>FS - K. Wong</option>
-            <option>FS - J. Tan</option>
-          </select>
-        </div>
-        <div class="assign-grid" id="assign-gate-list"></div>
-        <div class="assign-actions">
-          <button class="modal-action assign-submit" type="button" id="assign-submit">Submit</button>
-        </div>
-        <div class="assign-summary" id="assign-summary"></div>
       </div>
     </div>
     <script src="app.js"></script>

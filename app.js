@@ -212,10 +212,6 @@ const modalTeamList = document.querySelector(".modal-team-list");
 const modalCloseList = document.querySelector(".modal-close-list");
 const modalTeamBlock = document.querySelector(".modal-team");
 const modalCloseBlock = document.querySelector(".modal-close-team");
-const assignButton = document.querySelector("#assign-gate");
-const assignModal = document.querySelector(".assign-modal");
-const assignBackdrop = document.querySelector(".assign-backdrop");
-const assignClose = document.querySelector(".assign-close");
 const assignList = document.querySelector("#assign-gate-list");
 const assignFs = document.querySelector("#assign-fs");
 const assignSubmit = document.querySelector("#assign-submit");
@@ -355,35 +351,72 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeModal();
 });
 
-const openAssignModal = () => {
-  if (!assignModal || !assignBackdrop || !assignList) return;
-  const gates = Array.from(document.querySelectorAll(".gate-label"))
+const defaultGates = [
+  "A1",
+  "A3",
+  "A5",
+  "A7",
+  "A9",
+  "A12",
+  "B1",
+  "B3",
+  "B5",
+  "B7",
+  "B9",
+  "B10",
+  "C1",
+  "C3",
+  "C5",
+  "C7",
+  "C9",
+  "D1",
+  "D2",
+  "D3",
+  "E1",
+  "E3",
+  "E5",
+  "E11",
+];
+
+const getGateTimes = () => {
+  const gateTimes = {};
+  document.querySelectorAll(".flight-card").forEach((card) => {
+    const gateEl = card.querySelector(".gate-label");
+    const etdEl = card.querySelector(".flight-times span:first-child");
+    if (!gateEl || !etdEl) return;
+    const gate = `Gate ${gateEl.textContent.replace("Gate", "").trim()}`;
+    const etd = etdEl.textContent.replace("ETD:", "").trim();
+    gateTimes[gate] = etd;
+  });
+  if (Object.keys(gateTimes).length === 0) {
+    const baseTimes = [
+      "0800hrs",
+      "0830hrs",
+      "0900hrs",
+      "0930hrs",
+      "1000hrs",
+      "1030hrs",
+      "1100hrs",
+      "1130hrs",
+      "1200hrs",
+    ];
+    defaultGates.forEach((gate, idx) => {
+      gateTimes[`Gate ${gate}`] = baseTimes[idx % baseTimes.length];
+    });
+  }
+  return gateTimes;
+};
+
+const populateAssignGates = () => {
+  if (!assignList) return;
+  const gatesFromCards = Array.from(document.querySelectorAll(".gate-label"))
     .map((el) => el.textContent.replace("Gate", "").trim())
     .filter(Boolean);
+  const gates = gatesFromCards.length ? gatesFromCards : defaultGates;
   assignList.innerHTML = gates
     .map((gate) => `<button class="assign-gate" type="button">Gate ${gate}</button>`)
     .join("");
-  assignBackdrop.classList.add("is-visible");
-  assignModal.classList.add("is-visible");
 };
-
-const closeAssignModal = () => {
-  if (!assignModal || !assignBackdrop) return;
-  assignBackdrop.classList.remove("is-visible");
-  assignModal.classList.remove("is-visible");
-};
-
-if (assignButton) {
-  assignButton.addEventListener("click", openAssignModal);
-}
-
-if (assignClose) {
-  assignClose.addEventListener("click", closeAssignModal);
-}
-
-if (assignBackdrop) {
-  assignBackdrop.addEventListener("click", closeAssignModal);
-}
 
 if (assignList && fsName) {
   assignList.addEventListener("click", (event) => {
@@ -393,14 +426,16 @@ if (assignList && fsName) {
   });
 }
 
-if (assignSubmit && fsName) {
+if (assignSubmit) {
   assignSubmit.addEventListener("click", () => {
     const selected = assignFs ? assignFs.value : "";
     const gates = Array.from(
       document.querySelectorAll(".assign-gate.is-selected")
     ).map((btn) => btn.textContent.trim());
     if (!selected || gates.length === 0) return;
-    fsName.textContent = `${selected} (${gates.join(", ")})`;
+    if (fsName) {
+      fsName.textContent = `${selected} (${gates.join(", ")})`;
+    }
     assignments[selected] = gates;
     document.querySelectorAll(".flight-card").forEach((card) => {
       const gateEl = card.querySelector(".gate-label");
@@ -412,21 +447,13 @@ if (assignSubmit && fsName) {
       }
     });
     document.dispatchEvent(new Event("assignments:updated"));
-    closeAssignModal();
+    document.dispatchEvent(new Event("assignments:updated"));
   });
 }
 
 if (assignSummary) {
   const renderTimeline = () => {
-    const gateTimes = {};
-    document.querySelectorAll(".flight-card").forEach((card) => {
-      const gateEl = card.querySelector(".gate-label");
-      const etdEl = card.querySelector(".flight-times span:first-child");
-      if (!gateEl || !etdEl) return;
-      const gate = `Gate ${gateEl.textContent.replace("Gate", "").trim()}`;
-      const etd = etdEl.textContent.replace("ETD:", "").trim();
-      gateTimes[gate] = etd;
-    });
+    const gateTimes = getGateTimes();
 
     const rows = Object.entries(assignments).map(([fs, gates]) => {
       const times = gates
@@ -469,3 +496,5 @@ if (assignSummary) {
   renderTimeline();
   document.addEventListener("assignments:updated", renderTimeline);
 }
+
+populateAssignGates();

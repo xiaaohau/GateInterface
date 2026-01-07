@@ -988,6 +988,28 @@ body {
   gap: 6px;
 }
 
+.assign-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+}
+
+.assign-panel {
+  padding: 16px;
+  border-radius: 16px;
+  background: #15181e;
+  border: 1px solid #2a3038;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+}
+
+.assign-title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .assign-label {
   font-size: 11px;
   letter-spacing: 0.08em;

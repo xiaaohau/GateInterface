@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Assign Gate</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page in-progress-page control-room">
+      <div class="frame">
+        <header class="topbar">
+          <div class="header-left">
+            <h1 class="page-title">Assign Gate</h1>
+            <div class="last-updated">Last Updated: 24 Dec 2025 11:02 AM</div>
+          </div>
+          <div class="header-right">
+            <a class="nav-button" href="in-progress.html">Back to FS Page</a>
+          </div>
+        </header>
+
+        <section class="section">
+          <div class="assign-page">
+            <div class="assign-panel">
+              <label class="assign-label" for="assign-fs">Select FS</label>
+              <select id="assign-fs" class="assign-select">
+                <option value="">Select FS</option>
+                <option>FS - A. Rahman</option>
+                <option>FS - S. Lim</option>
+                <option>FS - K. Wong</option>
+                <option>FS - J. Tan</option>
+              </select>
+              <div class="assign-grid" id="assign-gate-list"></div>
+              <div class="assign-actions">
+                <button class="modal-action assign-submit" type="button" id="assign-submit">Submit</button>
+              </div>
+            </div>
+            <div class="assign-panel">
+              <h3 class="assign-title">Assignment Timeline</h3>
+              <div class="assign-summary" id="assign-summary"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
