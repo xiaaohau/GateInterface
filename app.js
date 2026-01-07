@@ -218,6 +218,7 @@ const assignBackdrop = document.querySelector(".assign-backdrop");
 const assignClose = document.querySelector(".assign-close");
 const assignList = document.querySelector("#assign-gate-list");
 const assignFs = document.querySelector("#assign-fs");
+const assignSubmit = document.querySelector("#assign-submit");
 const fsName = document.querySelector("#fs-name");
 
 const staffPool = [
@@ -379,8 +380,18 @@ if (assignList && fsName) {
   assignList.addEventListener("click", (event) => {
     const btn = event.target.closest(".assign-gate");
     if (!btn) return;
+    btn.classList.toggle("is-selected");
+  });
+}
+
+if (assignSubmit && fsName) {
+  assignSubmit.addEventListener("click", () => {
     const selected = assignFs ? assignFs.value : "";
-    fsName.textContent = selected ? `${selected} (${btn.textContent})` : `${btn.textContent} Assigned`;
+    const gates = Array.from(
+      document.querySelectorAll(".assign-gate.is-selected")
+    ).map((btn) => btn.textContent.trim());
+    if (!selected || gates.length === 0) return;
+    fsName.textContent = `${selected} (${gates.join(", ")})`;
     closeAssignModal();
   });
 }
