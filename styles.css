@@ -1134,30 +1134,32 @@ body {
 
 .timeline-marker {
   position: absolute;
-  top: 10px;
+  top: 6px;
   transform: translateX(-50%);
   display: grid;
   justify-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .timeline-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 999px;
   background: #30ebff;
   box-shadow: 0 0 8px rgba(48, 235, 255, 0.6);
 }
 
 .timeline-label-small {
-  font-size: 10px;
-  color: #f5f2ea;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0b0f14;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: rgba(17, 20, 26, 0.8);
-  padding: 2px 6px;
+  background: #30ebff;
+  padding: 3px 8px;
   border-radius: 999px;
   white-space: nowrap;
+  transform: translateY(2px);
 }
 
 .modal {
