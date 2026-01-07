@@ -1099,9 +1099,9 @@ body {
 
 .timeline-row {
   display: grid;
-  grid-template-columns: 80px 1fr;
-  gap: 10px;
-  align-items: center;
+  grid-template-columns: 140px 1fr;
+  gap: 14px;
+  align-items: start;
 }
 
 .timeline-label {
@@ -1109,21 +1109,23 @@ body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #f5f2ea;
+  line-height: 1.2;
 }
 
 .timeline {
   position: relative;
-  height: 36px;
+  height: 46px;
   background: #232830;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0 16px;
 }
 
 .timeline-axis {
   position: absolute;
-  top: -16px;
-  left: 0;
-  right: 0;
+  top: -18px;
+  left: 12px;
+  right: 12px;
   display: flex;
   justify-content: space-between;
   font-size: 10px;
@@ -1132,11 +1134,11 @@ body {
 
 .timeline-marker {
   position: absolute;
-  top: 8px;
+  top: 10px;
   transform: translateX(-50%);
   display: grid;
   justify-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 .timeline-dot {
@@ -1148,10 +1150,14 @@ body {
 }
 
 .timeline-label-small {
-  font-size: 9px;
+  font-size: 10px;
   color: #f5f2ea;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  background: rgba(17, 20, 26, 0.8);
+  padding: 2px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 .modal {

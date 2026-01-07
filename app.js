@@ -475,7 +475,8 @@ if (assignSummary) {
         .map((item) => {
           const m = toMinutes(item.time);
           const left = m === null ? 0 : Math.round(((m - min) / span) * 100);
-          return `<div class="timeline-marker" style="left:${left}%">
+          const clamped = Math.min(95, Math.max(5, left));
+          return `<div class="timeline-marker" style="left:${clamped}%">
               <div class="timeline-dot"></div>
               <div class="timeline-label-small">${item.gate} ${item.time}</div>
             </div>`;
