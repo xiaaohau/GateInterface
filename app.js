@@ -212,6 +212,12 @@ const modalTeamList = document.querySelector(".modal-team-list");
 const modalCloseList = document.querySelector(".modal-close-list");
 const modalTeamBlock = document.querySelector(".modal-team");
 const modalCloseBlock = document.querySelector(".modal-close-team");
+const assignButton = document.querySelector("#assign-gate");
+const assignModal = document.querySelector(".assign-modal");
+const assignBackdrop = document.querySelector(".assign-backdrop");
+const assignClose = document.querySelector(".assign-close");
+const assignList = document.querySelector("#assign-gate-list");
+const fsName = document.querySelector("#fs-name");
 
 const staffPool = [
   { id: "OS-1142", name: "A. Rahman", phone: "+65 9123 4567" },
@@ -337,3 +343,42 @@ if (modalBackdrop) {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeModal();
 });
+
+const openAssignModal = () => {
+  if (!assignModal || !assignBackdrop || !assignList) return;
+  const gates = Array.from(document.querySelectorAll(".gate-label"))
+    .map((el) => el.textContent.replace("Gate", "").trim())
+    .filter(Boolean);
+  assignList.innerHTML = gates
+    .map((gate) => `<button class="assign-gate" type="button">Gate ${gate}</button>`)
+    .join("");
+  assignBackdrop.classList.add("is-visible");
+  assignModal.classList.add("is-visible");
+};
+
+const closeAssignModal = () => {
+  if (!assignModal || !assignBackdrop) return;
+  assignBackdrop.classList.remove("is-visible");
+  assignModal.classList.remove("is-visible");
+};
+
+if (assignButton) {
+  assignButton.addEventListener("click", openAssignModal);
+}
+
+if (assignClose) {
+  assignClose.addEventListener("click", closeAssignModal);
+}
+
+if (assignBackdrop) {
+  assignBackdrop.addEventListener("click", closeAssignModal);
+}
+
+if (assignList && fsName) {
+  assignList.addEventListener("click", (event) => {
+    const btn = event.target.closest(".assign-gate");
+    if (!btn) return;
+    fsName.textContent = `${btn.textContent} Assigned`;
+    closeAssignModal();
+  });
+}

@@ -89,6 +89,19 @@ body {
   gap: 6px;
 }
 
+.fs-update {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.fs-update span {
+  color: #f5f2ea;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
 .header-right {
   display: inline-flex;
   align-items: center;
@@ -954,6 +967,32 @@ body {
   pointer-events: none;
   transition: opacity 0.2s ease;
   z-index: 20;
+}
+
+.assign-modal {
+  width: min(560px, 92vw);
+}
+
+.assign-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.assign-gate {
+  padding: 10px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #1f242d;
+  color: #f5f2ea;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.assign-gate:hover {
+  filter: brightness(1.1);
 }
 
 .modal {
