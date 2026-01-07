@@ -219,7 +219,11 @@ const assignClose = document.querySelector(".assign-close");
 const assignList = document.querySelector("#assign-gate-list");
 const assignFs = document.querySelector("#assign-fs");
 const assignSubmit = document.querySelector("#assign-submit");
+const assignView = document.querySelector("#assign-view");
+const assignSummary = document.querySelector("#assign-summary");
 const fsName = document.querySelector("#fs-name");
+
+const assignments = {};
 
 const staffPool = [
   { id: "OS-1142", name: "A. Rahman", phone: "+65 9123 4567" },
@@ -392,6 +396,7 @@ if (assignSubmit && fsName) {
     ).map((btn) => btn.textContent.trim());
     if (!selected || gates.length === 0) return;
     fsName.textContent = `${selected} (${gates.join(", ")})`;
+    assignments[selected] = gates;
     document.querySelectorAll(".flight-card").forEach((card) => {
       const gateEl = card.querySelector(".gate-label");
       const fsBadge = card.querySelector(".fs-badge");
@@ -402,5 +407,18 @@ if (assignSubmit && fsName) {
       }
     });
     closeAssignModal();
+  });
+}
+
+if (assignView && assignSummary) {
+  assignView.addEventListener("click", () => {
+    const rows = Object.entries(assignments).map(
+      ([fs, gates]) =>
+        `<div class="assign-row"><span>${fs}</span><span>${gates.join(", ")}</span></div>`
+    );
+    assignSummary.innerHTML = rows.length
+      ? rows.join("")
+      : "<div class=\"assign-row\"><span>No assignments</span><span>-</span></div>";
+    assignSummary.classList.toggle("is-hidden");
   });
 }

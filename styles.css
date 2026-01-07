@@ -1033,6 +1033,43 @@ body {
   margin-top: 12px;
 }
 
+.assign-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.assign-view {
+  background: #1f242d;
+  color: #f5f2ea;
+}
+
+.assign-summary {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #1a1e25;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.assign-summary .assign-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: #262b33;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.assign-summary .assign-row span:last-child {
+  color: #30ebff;
+  font-weight: 700;
+}
+
 .modal {
   position: fixed;
   inset: auto 50% auto auto;
