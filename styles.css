@@ -1051,7 +1051,7 @@ body {
   background: #1a1e25;
   border: 1px solid rgba(255, 255, 255, 0.08);
   display: grid;
-  gap: 8px;
+  gap: 14px;
   font-size: 12px;
 }
 
@@ -1068,6 +1068,63 @@ body {
 .assign-summary .assign-row span:last-child {
   color: #30ebff;
   font-weight: 700;
+}
+
+.timeline-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.timeline-label {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #f5f2ea;
+}
+
+.timeline {
+  position: relative;
+  height: 36px;
+  background: #232830;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.timeline-axis {
+  position: absolute;
+  top: -16px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #a7a39a;
+}
+
+.timeline-marker {
+  position: absolute;
+  top: 8px;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+.timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #30ebff;
+  box-shadow: 0 0 8px rgba(48, 235, 255, 0.6);
+}
+
+.timeline-label-small {
+  font-size: 9px;
+  color: #f5f2ea;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .modal {

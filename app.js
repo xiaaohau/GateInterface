@@ -266,6 +266,12 @@ const subtractMinutes = (timeLabel, minutes) => {
   return formatTime(h, m);
 };
 
+const toMinutes = (timeLabel) => {
+  const parsed = parseTime(timeLabel);
+  if (!parsed) return null;
+  return parsed.hours * 60 + parsed.minutes;
+};
+
 const openModal = (data) => {
   if (!modal || !modalBackdrop) return;
   if (modalTitle) modalTitle.textContent = data.title || "Action Details";
@@ -412,10 +418,50 @@ if (assignSubmit && fsName) {
 
 if (assignView && assignSummary) {
   assignView.addEventListener("click", () => {
-    const rows = Object.entries(assignments).map(
-      ([fs, gates]) =>
-        `<div class="assign-row"><span>${fs}</span><span>${gates.join(", ")}</span></div>`
-    );
+    const gateTimes = {};
+    document.querySelectorAll(".flight-card").forEach((card) => {
+      const gateEl = card.querySelector(".gate-label");
+      const etdEl = card.querySelector(".flight-times span:first-child");
+      if (!gateEl || !etdEl) return;
+      const gate = `Gate ${gateEl.textContent.replace("Gate", "").trim()}`;
+      const etd = etdEl.textContent.replace("ETD:", "").trim();
+      gateTimes[gate] = etd;
+    });
+
+    const rows = Object.entries(assignments).map(([fs, gates]) => {
+      const times = gates
+        .map((gate) => ({ gate, time: gateTimes[gate] || "----" }))
+        .filter((item) => item.time !== "----");
+      const minutes = times.map((item) => toMinutes(item.time)).filter((m) => m !== null);
+      const min = minutes.length ? Math.min(...minutes) : 0;
+      const max = minutes.length ? Math.max(...minutes) : min + 60;
+      const span = Math.max(60, max - min);
+
+      const axisStart = formatTime(Math.floor(min / 60), min % 60);
+      const mid = min + Math.floor(span / 2);
+      const axisMid = formatTime(Math.floor(mid / 60), mid % 60);
+      const axisEnd = formatTime(Math.floor((min + span) / 60), (min + span) % 60);
+
+      const markers = times
+        .map((item) => {
+          const m = toMinutes(item.time);
+          const left = m === null ? 0 : Math.round(((m - min) / span) * 100);
+          return `<div class="timeline-marker" style="left:${left}%">
+              <div class="timeline-dot"></div>
+              <div class="timeline-label-small">${item.gate} ${item.time}</div>
+            </div>`;
+        })
+        .join("");
+
+      return `<div class="timeline-row">
+          <div class="timeline-label">${fs}</div>
+          <div class="timeline">
+            <div class="timeline-axis"><span>${axisStart}</span><span>${axisMid}</span><span>${axisEnd}</span></div>
+            ${markers}
+          </div>
+        </div>`;
+    });
+
     assignSummary.innerHTML = rows.length
       ? rows.join("")
       : "<div class=\"assign-row\"><span>No assignments</span><span>-</span></div>";
