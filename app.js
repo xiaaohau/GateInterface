@@ -480,7 +480,8 @@ if (assignSummary) {
       const axisMid = "1200hrs";
       const axisEnd = "2400hrs";
 
-      const rowsCount = Math.min(4, Math.max(1, Math.ceil(times.length / 5)));
+      let rowsCount = Math.min(4, Math.max(1, Math.ceil(times.length / 4)));
+      if (times.length > 1 && rowsCount === 1) rowsCount = 2;
       const rowHeight = 18;
       const baseHeight = 34;
       const timelineHeight = baseHeight + (rowsCount - 1) * rowHeight;
@@ -491,8 +492,10 @@ if (assignSummary) {
           const left = m === null ? 0 : Math.round((m / span) * 100);
           const clamped = Math.min(98, Math.max(2, left));
           const rowIndex = rowsCount > 1 ? idx % rowsCount : 0;
+          const offset = rowsCount > 1 ? (rowIndex - (rowsCount - 1) / 2) * 1.2 : 0;
+          const adjusted = Math.min(98, Math.max(2, clamped + offset));
           const top = 8 + rowIndex * rowHeight;
-          return `<div class="timeline-marker" style="left:${clamped}%; top:${top}px;">
+          return `<div class="timeline-marker" style="left:${adjusted}%; top:${top}px;">
               <div class="timeline-dot"></div>
               <div class="timeline-label-small">${item.gate} ${item.time}</div>
             </div>`;
