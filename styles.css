@@ -445,6 +445,26 @@ body {
 }
 
 @media (orientation: portrait) {
+  .in-progress-page .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .in-progress-page .header-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .in-progress-page .card-grid.five-cols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .in-progress-page .alert-panel {
+    width: 100%;
+    max-width: none;
+  }
+}
+@media (orientation: portrait) {
   .os-page .frame {
     padding: 18px 18px 28px;
   }
