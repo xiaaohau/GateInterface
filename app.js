@@ -53,11 +53,14 @@ if (activeTab) {
 applyProgressColors();
 
 const updateGotTimes = () => {
-  const cards = document.querySelectorAll(".card .card-times");
-  cards.forEach((times) => {
+  const rows = document.querySelectorAll(".card .card-times");
+  rows.forEach((times) => {
     if (times.querySelector(".got-time")) return;
-    const text = times.textContent || "";
-    const match = text.match(/ETD[:\s]*.*?(\d{4})hrs/);
+    const etdSpan = Array.from(times.querySelectorAll("span")).find((span) =>
+      span.textContent.trim().startsWith("ETD")
+    );
+    if (!etdSpan) return;
+    const match = etdSpan.textContent.match(/(\d{4})hrs/);
     if (!match) return;
     const etd = `${match[1]}hrs`;
     const got = subtractMinutes(etd, 70);
