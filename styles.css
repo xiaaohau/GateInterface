@@ -89,6 +89,24 @@ body {
   gap: 6px;
 }
 
+.title-inline {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.critical-page .header-left {
+  width: 100%;
+}
+
+.critical-page .header-right {
+  width: 100%;
+  justify-content: flex-start;
+}
+
 .fs-update {
   font-size: 12px;
   letter-spacing: 0.08em;
@@ -1639,6 +1657,23 @@ body {
   color: #30ebff;
   border: 1px solid rgba(48, 235, 255, 0.85);
   animation: sandwich-pulse 0.9s ease-in-out infinite;
+}
+
+.sandwich-card {
+  position: relative;
+  animation: sandwich-card-blink 0.9s ease-in-out infinite;
+}
+
+@keyframes sandwich-card-blink {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(48, 235, 255, 0), 0 12px 28px rgba(5, 6, 8, 0.45);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(48, 235, 255, 0.8), 0 0 48px rgba(48, 235, 255, 0.6);
+    filter: brightness(1.08);
+  }
 }
 
 @keyframes sandwich-pulse {
