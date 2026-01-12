@@ -429,8 +429,8 @@ body {
 
 .t1-card {
   border-color: #3bd2ff;
-  background: linear-gradient(150deg, rgba(22, 120, 164, 0.92), rgba(14, 46, 62, 0.98));
-  box-shadow: 0 12px 28px rgba(20, 160, 210, 0.5);
+  background: #0f6d95;
+  box-shadow: 0 14px 30px rgba(20, 160, 210, 0.6);
   color: #f2fbff;
 }
 
@@ -445,8 +445,8 @@ body {
 
 .t2-card {
   border-color: #ff9b3d;
-  background: linear-gradient(150deg, rgba(194, 96, 22, 0.92), rgba(62, 30, 12, 0.98));
-  box-shadow: 0 12px 28px rgba(255, 140, 60, 0.5);
+  background: #b65712;
+  box-shadow: 0 14px 30px rgba(255, 140, 60, 0.6);
   color: #fff4e7;
 }
 
