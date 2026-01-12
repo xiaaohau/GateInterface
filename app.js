@@ -302,14 +302,12 @@ const updateGotTimes = () => {
   });
 };
 
-updateGotTimes();
-
 const updateRtGotForInProgress = () => {
   const cards = document.querySelectorAll(".flight-card");
   cards.forEach((card) => {
     const times = card.querySelector(".flight-times");
     if (!times) return;
-    if (times.querySelector(".got-time") || times.querySelector(".rt-time")) return;
+    times.querySelectorAll(".got-time, .rt-time").forEach((el) => el.remove());
     const etdSpan = Array.from(times.querySelectorAll("span")).find((span) =>
       span.textContent.trim().startsWith("ETD")
     );
@@ -336,7 +334,11 @@ const updateRtGotForInProgress = () => {
   });
 };
 
-updateRtGotForInProgress();
+document.addEventListener("DOMContentLoaded", () => {
+  updateGotTimes();
+  updateRtGotForInProgress();
+  setTimeout(sortInProgressByRT, 0);
+});
 
 const reorderInProgressTimes = (times) => {
   if (!times) return;
@@ -374,7 +376,6 @@ const sortInProgressByRT = () => {
   });
 };
 
-setTimeout(sortInProgressByRT, 0);
 
 const updateUnassignedBadges = () => {
   const section = document.querySelector("#unassigned-flights");
