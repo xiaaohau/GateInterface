@@ -427,6 +427,24 @@ body {
   box-shadow: 0 10px 24px rgba(5, 6, 8, 0.5);
 }
 
+.t1-card {
+  border-color: rgba(64, 173, 255, 0.7);
+  box-shadow: 0 10px 26px rgba(32, 130, 210, 0.35);
+}
+
+.t1-card .card-sub {
+  color: #5fd0ff;
+}
+
+.t2-card {
+  border-color: rgba(255, 170, 80, 0.7);
+  box-shadow: 0 10px 26px rgba(255, 140, 60, 0.35);
+}
+
+.t2-card .card-sub {
+  color: #ffb660;
+}
+
 .card.compact {
   min-height: 108px;
 }
