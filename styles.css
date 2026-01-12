@@ -463,6 +463,18 @@ body {
     width: 100%;
     max-width: none;
   }
+
+  .in-progress-page .flight-times {
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    padding: 6px 8px;
+    gap: 4px 8px;
+  }
+
+  .in-progress-page .flight-times span {
+    white-space: normal;
+    line-height: 1.1;
+  }
 }
 @media (orientation: portrait) {
   .os-page .frame {
