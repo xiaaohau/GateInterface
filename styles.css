@@ -428,21 +428,23 @@ body {
 }
 
 .t1-card {
-  border-color: rgba(64, 173, 255, 0.7);
-  box-shadow: 0 10px 26px rgba(32, 130, 210, 0.35);
+  border-color: #3bd2ff;
+  background: linear-gradient(160deg, rgba(16, 72, 94, 0.92), rgba(18, 26, 34, 0.98));
+  box-shadow: 0 12px 28px rgba(20, 160, 210, 0.5);
 }
 
 .t1-card .card-sub {
-  color: #5fd0ff;
+  color: #7fe7ff;
 }
 
 .t2-card {
-  border-color: rgba(255, 170, 80, 0.7);
-  box-shadow: 0 10px 26px rgba(255, 140, 60, 0.35);
+  border-color: #ff9b3d;
+  background: linear-gradient(160deg, rgba(90, 48, 16, 0.92), rgba(23, 19, 16, 0.98));
+  box-shadow: 0 12px 28px rgba(255, 140, 60, 0.5);
 }
 
 .t2-card .card-sub {
-  color: #ffb660;
+  color: #ffc37a;
 }
 
 .card.compact {
