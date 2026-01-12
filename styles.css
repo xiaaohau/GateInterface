@@ -1653,6 +1653,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
   background: rgba(48, 235, 255, 0.18);
   color: #30ebff;
   border: 1px solid rgba(48, 235, 255, 0.85);
