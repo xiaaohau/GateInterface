@@ -781,8 +781,8 @@ body {
 
 .in-progress-page .flight-times span {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .in-progress-page .flight-progress {
