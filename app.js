@@ -224,10 +224,6 @@ const modalClose = document.querySelector(".modal-close");
 const modalTitle = document.querySelector(".modal-title");
 const modalGate = document.querySelector(".modal-gate");
 const modalNextGate = document.querySelector(".modal-next-gate");
-const modalETD = document.querySelector(".modal-etd");
-const modalSTD = document.querySelector(".modal-std");
-const modalFlightNo = document.querySelector(".modal-flight-no");
-const modalReportTime = document.querySelector(".modal-report-time");
 const modalTeamList = document.querySelector(".modal-team-list");
 const modalCloseList = document.querySelector(".modal-close-list");
 const modalTeamBlock = document.querySelector(".modal-team");
@@ -308,6 +304,76 @@ const updateGotTimes = () => {
 
 updateGotTimes();
 
+const updateRtGotForInProgress = () => {
+  const cards = document.querySelectorAll(".flight-card");
+  cards.forEach((card) => {
+    const times = card.querySelector(".flight-times");
+    if (!times) return;
+    if (times.querySelector(".got-time") || times.querySelector(".rt-time")) return;
+    const etdSpan = Array.from(times.querySelectorAll("span")).find((span) =>
+      span.textContent.trim().startsWith("ETD")
+    );
+    if (!etdSpan) return;
+    const match = etdSpan.textContent.match(/(\d{4})hrs/);
+    if (!match) return;
+    const etd = `${match[1]}hrs`;
+    const got = subtractMinutes(etd, 70);
+    const rt = got && got !== "-" ? subtractMinutes(got, 20) : "-";
+    if (!got || got === "-" || !rt || rt === "-") return;
+    const gotEl = document.createElement("span");
+    gotEl.className = "got-time";
+    gotEl.textContent = `GOT: ${got}`;
+    const rtEl = document.createElement("span");
+    rtEl.className = "rt-time";
+    rtEl.textContent = `RT: ${rt}`;
+    times.appendChild(gotEl);
+    times.appendChild(rtEl);
+  });
+};
+
+updateRtGotForInProgress();
+
+const reorderInProgressTimes = () => {
+  const cards = document.querySelectorAll(".flight-card");
+  cards.forEach((card) => {
+    const times = card.querySelector(".flight-times");
+    if (!times) return;
+    const spans = Array.from(times.querySelectorAll("span"));
+    const getLabel = (el) => el.textContent.split(":")[0].trim();
+    const findByLabel = (label) => spans.find((el) => getLabel(el) === label);
+    const rt = findByLabel("RT");
+    const got = findByLabel("GOT");
+    const etd = findByLabel("ETD");
+    const std = findByLabel("STD");
+    times.innerHTML = "";
+    [rt, got, etd, std].forEach((el) => {
+      if (el) times.appendChild(el);
+    });
+  });
+};
+
+reorderInProgressTimes();
+
+const sortInProgressByRT = () => {
+  const grids = document.querySelectorAll(".in-progress-page .card-grid");
+  grids.forEach((grid) => {
+    const cards = Array.from(grid.querySelectorAll(".flight-card"));
+    if (cards.length === 0) return;
+    cards.sort((a, b) => {
+      const aRt = a.querySelector(".rt-time")?.textContent || "";
+      const bRt = b.querySelector(".rt-time")?.textContent || "";
+      const aMatch = aRt.match(/(\d{4})hrs/);
+      const bMatch = bRt.match(/(\d{4})hrs/);
+      const aTime = aMatch ? toMinutes(`${aMatch[1]}hrs`) : Number.MAX_SAFE_INTEGER;
+      const bTime = bMatch ? toMinutes(`${bMatch[1]}hrs`) : Number.MAX_SAFE_INTEGER;
+      return aTime - bTime;
+    });
+    cards.forEach((card) => grid.appendChild(card));
+  });
+};
+
+sortInProgressByRT();
+
 const updateUnassignedBadges = () => {
   const section = document.querySelector("#unassigned-flights");
   if (!section) return;
@@ -341,10 +407,6 @@ const openModal = (data) => {
   if (modalTitle) modalTitle.textContent = data.title || "Action Details";
   if (modalGate) modalGate.textContent = data.gate || "Gate";
   if (modalNextGate) modalNextGate.textContent = data.nextGate || "-";
-  if (modalETD) modalETD.textContent = data.etd || "-";
-  if (modalSTD) modalSTD.textContent = data.std || "-";
-  if (modalFlightNo) modalFlightNo.textContent = data.flightNo || "-";
-  if (modalReportTime) modalReportTime.textContent = data.reportTime || "-";
   if (modalTeamList) {
     modalTeamList.innerHTML = data.teamMembers
       .map(

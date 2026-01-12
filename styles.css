@@ -629,6 +629,25 @@ body {
   font-weight: 600;
 }
 
+.flight-card .flight-times .got-time,
+.flight-card .flight-times .rt-time {
+  color: #f7d488;
+  font-weight: 700;
+}
+
+.flight-card .flight-times .rt-time {
+  color: #7fe7ff;
+}
+
+.flight-card .flight-times {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.flight-card .flight-times span {
+  flex: 0 0 calc(50% - 6px);
+}
+
 .flight-card {
   padding: 0;
   overflow: hidden;
