@@ -332,31 +332,26 @@ const updateRtGotForInProgress = () => {
     if (rtMatch) {
       card.dataset.rtMinutes = String(toMinutes(`${rtMatch[1]}hrs`));
     }
+    reorderInProgressTimes(times);
   });
 };
 
 updateRtGotForInProgress();
 
-const reorderInProgressTimes = () => {
-  const cards = document.querySelectorAll(".flight-card");
-  cards.forEach((card) => {
-    const times = card.querySelector(".flight-times");
-    if (!times) return;
-    const spans = Array.from(times.querySelectorAll("span"));
-    const getLabel = (el) => el.textContent.split(":")[0].trim();
-    const findByLabel = (label) => spans.find((el) => getLabel(el) === label);
-    const rt = findByLabel("RT");
-    const got = findByLabel("GOT");
-    const etd = findByLabel("ETD");
-    const std = findByLabel("STD");
-    times.innerHTML = "";
-    [rt, got, etd, std].forEach((el) => {
-      if (el) times.appendChild(el);
-    });
+const reorderInProgressTimes = (times) => {
+  if (!times) return;
+  const spans = Array.from(times.querySelectorAll("span"));
+  const getLabel = (el) => el.textContent.split(":")[0].trim();
+  const findByLabel = (label) => spans.find((el) => getLabel(el) === label);
+  const rt = findByLabel("RT");
+  const got = findByLabel("GOT");
+  const etd = findByLabel("ETD");
+  const std = findByLabel("STD");
+  times.innerHTML = "";
+  [rt, got, etd, std].forEach((el) => {
+    if (el) times.appendChild(el);
   });
 };
-
-reorderInProgressTimes();
 
 const sortInProgressByRT = () => {
   const grids = document.querySelectorAll(".in-progress-page .card-grid");

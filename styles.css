@@ -776,11 +776,13 @@ body {
   font-weight: 700;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px 10px;
+  gap: 6px 14px;
 }
 
 .in-progress-page .flight-times span {
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .in-progress-page .flight-progress {
