@@ -308,6 +308,28 @@ const updateGotTimes = () => {
 
 updateGotTimes();
 
+const updateUnassignedBadges = () => {
+  const section = document.querySelector("#unassigned-flights");
+  if (!section) return;
+  const cards = section.querySelectorAll(".card");
+  cards.forEach((card) => {
+    const hasChange = card.querySelector(".change-badge, .changed-field");
+    const badge = card.querySelector(".unassigned-badge");
+    if (hasChange) {
+      if (badge) badge.remove();
+      return;
+    }
+    if (!badge) {
+      const newBadge = document.createElement("div");
+      newBadge.className = "unassigned-badge";
+      newBadge.textContent = "Unassigned";
+      card.insertBefore(newBadge, card.children[1] || null);
+    }
+  });
+};
+
+updateUnassignedBadges();
+
 const toMinutes = (timeLabel) => {
   const parsed = parseTime(timeLabel);
   if (!parsed) return null;

@@ -544,6 +544,19 @@ body {
   gap: 8px;
 }
 
+.card-title-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-route {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
 .card-title {
   font-weight: 700;
   font-size: 14px;
