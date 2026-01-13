@@ -80,6 +80,18 @@ const updateGateCount = () => {
   gateEl.textContent = String(count);
 };
 
+const applyTeamOfficerCounts = () => {
+  document.querySelectorAll(".progress-row span:first-child").forEach((span) => {
+    const text = span.textContent.trim();
+    const match = text.match(/^Team\s+(\d+)$/);
+    if (!match) return;
+    const teamId = Number(match[1]);
+    if (!Number.isFinite(teamId)) return;
+    const officerCount = teamId % 3 === 0 ? 2 : 3;
+    span.textContent = `Team ${teamId} (${officerCount})`;
+  });
+};
+
 const enablePullFilter = () => {
   const tile = document.querySelector("#pull-count-tile");
   if (!tile) return;
@@ -111,6 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateGateChangeCount();
   updateEnhancedCount();
   updateGateCount();
+  applyTeamOfficerCounts();
   applyStatusGateColors();
   enablePullFilter();
   enablePullRandom();
@@ -287,16 +300,19 @@ const updateGotTimes = () => {
     const match = etdSpan.textContent.match(/(\d{4})hrs/);
     if (!match) return;
     const etd = `${match[1]}hrs`;
-    const got = subtractMinutes(etd, 70);
-    if (!got || got === "-") return;
     const card = times.closest(".card");
     if (!card) return;
+    const isOfficerTask = Boolean(card.closest(".alert-section"));
+    const minutesOffset = isOfficerTask ? 90 : 70;
+    const timeValue = subtractMinutes(etd, minutesOffset);
+    if (!timeValue || timeValue === "-") return;
     const gateEl = card.querySelector(".card-sub");
     if (!gateEl) return;
     const gateText = gateEl.dataset.gateLabel || gateEl.textContent.trim();
     gateEl.dataset.gateLabel = gateText;
     gateEl.classList.add("with-got");
-    gateEl.innerHTML = `<span class="gate-label-text">${gateText}</span><span class="got-under-gate">GOT ${got}</span>`;
+    const label = isOfficerTask ? "RT" : "GOT";
+    gateEl.innerHTML = `<span class="gate-label-text">${gateText}</span><span class="got-under-gate">${label} ${timeValue}</span>`;
     const oldGot = times.querySelector(".got-time");
     if (oldGot) oldGot.remove();
   });
