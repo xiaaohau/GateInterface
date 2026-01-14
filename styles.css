@@ -886,9 +886,13 @@ body {
 
 .layout-split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 240px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   align-items: start;
+}
+
+.layout-split.has-panel {
+  grid-template-columns: minmax(0, 1fr) 240px;
 }
 
 .alert-panel {
