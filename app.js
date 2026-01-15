@@ -179,6 +179,36 @@ const enablePatdownFilter = () => {
   });
 };
 
+const enableAssignedTeamsCards = () => {
+  const page = document.querySelector(".in-progress-page");
+  if (!page) return;
+
+  const cards = page.querySelectorAll(".flight-card");
+  cards.forEach((card) => {
+    card.classList.add("is-pressable");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("role", "button");
+    const gateLabel = card.querySelector(".gate-label")?.textContent.trim();
+    const label = gateLabel ? `Assigned Teams ${gateLabel}` : "Assigned Teams";
+    card.setAttribute("aria-label", label);
+  });
+
+  page.addEventListener("click", (event) => {
+    if (event.target.closest(".pull-team, .close-gate")) return;
+    const card = event.target.closest(".flight-card");
+    if (!card) return;
+    openAssignedTeamsModal(card);
+  });
+
+  page.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const card = event.target.closest(".flight-card.is-pressable");
+    if (!card) return;
+    event.preventDefault();
+    openAssignedTeamsModal(card);
+  });
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   applyStatusGateColors();
   updatePullCount();
@@ -190,6 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
   enablePullFilter();
   enableGateChangeFilter();
   enablePatdownFilter();
+  enableAssignedTeamsCards();
   enablePullRandom();
   enableTeamsToggle();
 });
@@ -211,6 +242,9 @@ const applyStatusGateColors = () => {
 const enableTeamsToggle = () => {
   const toggle = document.querySelector("#toggle-teams");
   if (!toggle) return;
+  if (!document.body.classList.contains("teams-hidden")) {
+    document.body.classList.add("teams-hidden");
+  }
   const updateLabel = () => {
     toggle.textContent = document.body.classList.contains("teams-hidden")
       ? "Show Teams"
@@ -305,6 +339,14 @@ const modalTeamList = document.querySelector(".modal-team-list");
 const modalCloseList = document.querySelector(".modal-close-list");
 const modalTeamBlock = document.querySelector(".modal-team");
 const modalCloseBlock = document.querySelector(".modal-close-team");
+const modalSummary = document.querySelector(".modal-summary");
+const modalAction = document.querySelector(".modal-action");
+const modalTeamTitle = modalTeamBlock ? modalTeamBlock.querySelector("div") : null;
+const modalSummaryLabels = modalSummary
+  ? Array.from(modalSummary.querySelectorAll("div span:first-child"))
+  : [];
+const DEFAULT_SUMMARY_LABELS = ["Gate", "Next Gate"];
+const ASSIGNED_SUMMARY_LABELS = ["Gate", "Flight"];
 const assignList = document.querySelector("#assign-gate-list");
 const assignFs = document.querySelector("#assign-fs");
 const assignSubmit = document.querySelector("#assign-submit");
@@ -485,8 +527,30 @@ const toMinutes = (timeLabel) => {
   return parsed.hours * 60 + parsed.minutes;
 };
 
+const setModalSummaryLabels = (labels) => {
+  if (modalSummaryLabels.length < 2) return;
+  modalSummaryLabels[0].textContent = labels[0];
+  modalSummaryLabels[1].textContent = labels[1];
+};
+
+const setModalLayoutForAction = () => {
+  if (modalSummary) modalSummary.classList.remove("is-hidden");
+  if (modalAction) modalAction.classList.remove("is-hidden");
+  if (modalTeamTitle) modalTeamTitle.textContent = "Team Members";
+  setModalSummaryLabels(DEFAULT_SUMMARY_LABELS);
+};
+
+const setModalLayoutForAssigned = () => {
+  if (modalSummary) modalSummary.classList.remove("is-hidden");
+  if (modalAction) modalAction.classList.add("is-hidden");
+  if (modalCloseBlock) modalCloseBlock.classList.add("is-hidden");
+  if (modalTeamTitle) modalTeamTitle.textContent = "Assigned Teams";
+  setModalSummaryLabels(ASSIGNED_SUMMARY_LABELS);
+};
+
 const openModal = (data) => {
   if (!modal || !modalBackdrop) return;
+  setModalLayoutForAction();
   if (modalTitle) modalTitle.textContent = data.title || "Action Details";
   if (modalGate) modalGate.textContent = data.gate || "Gate";
   if (modalNextGate) modalNextGate.textContent = data.nextGate || "-";
@@ -509,6 +573,48 @@ const openModal = (data) => {
   if (modalCloseBlock) {
     modalCloseBlock.classList.toggle("is-hidden", data.closeOfficers.length === 0);
   }
+  modalBackdrop.classList.add("is-visible");
+  modal.classList.add("is-visible");
+};
+
+const openAssignedTeamsModal = (card) => {
+  if (!modal || !modalBackdrop || !card) return;
+  setModalLayoutForAssigned();
+  if (modalTitle) modalTitle.textContent = "Assigned Teams";
+
+  const gateEl = card.querySelector(".gate-label");
+  const gateText = gateEl ? gateEl.textContent.trim() : "Gate";
+  if (modalGate) modalGate.textContent = gateText || "Gate";
+
+  const flightEl = card.querySelector(".flight-tag");
+  const flightText = flightEl ? flightEl.textContent.replace("バ^", "").trim() : "-";
+  if (modalNextGate) modalNextGate.textContent = flightText || "-";
+
+  const assignedTeams = Array.from(
+    card.querySelectorAll(".flight-progress .progress-row")
+  ).map((row) => {
+    const cells = row.querySelectorAll("span");
+    return {
+      team: cells[0]?.textContent.trim() || "-",
+      progress: cells[1]?.textContent.trim() || "-",
+    };
+  });
+
+  if (modalTeamList) {
+    modalTeamList.innerHTML = assignedTeams.length
+      ? assignedTeams
+          .map(
+            (team) =>
+              `<li><span>${team.team}</span><span>${team.progress}</span></li>`
+          )
+          .join("")
+      : "<li><span>No assigned teams</span><span>-</span></li>";
+  }
+
+  if (modalTeamBlock) {
+    modalTeamBlock.classList.remove("is-hidden");
+  }
+
   modalBackdrop.classList.add("is-visible");
   modal.classList.add("is-visible");
 };

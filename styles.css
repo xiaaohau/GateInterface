@@ -724,6 +724,15 @@ body {
   border-color: #2c3138;
 }
 
+.flight-card.is-pressable {
+  cursor: pointer;
+}
+
+.flight-card.is-pressable:focus {
+  outline: 2px solid rgba(48, 235, 255, 0.7);
+  outline-offset: 2px;
+}
+
 .gate-banner {
   display: flex;
   align-items: center;
