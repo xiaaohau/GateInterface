@@ -73,6 +73,22 @@ const updateEnhancedCount = () => {
   countEl.textContent = String(count);
 };
 
+const isPatdownCard = (card) => {
+  if (!card) return false;
+  if (card.classList.contains("critical")) return false;
+  if (card.classList.contains("status-delayed")) return true;
+  const statusEl = card.querySelector(".status");
+  return Boolean(statusEl && statusEl.classList.contains("delayed"));
+};
+
+const updatePatdownCount = () => {
+  const countEl = document.querySelector("#patdown-count");
+  if (!countEl) return;
+  const count = Array.from(document.querySelectorAll(".flight-card")).filter(isPatdownCard)
+    .length;
+  countEl.textContent = String(count);
+};
+
 const updateGateCount = () => {
   const gateEl = document.querySelector("#gate-count");
   if (!gateEl) return;
@@ -118,14 +134,62 @@ const enablePullFilter = () => {
   });
 };
 
+const enableGateChangeFilter = () => {
+  const tile = document.querySelector("#gate-change-count-tile");
+  if (!tile) return;
+
+  const toggleFilter = () => {
+    document.body.classList.toggle("gate-change-filter-active");
+    tile.classList.toggle("is-active");
+  };
+
+  tile.addEventListener("click", toggleFilter);
+  tile.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleFilter();
+    }
+  });
+};
+
+const enablePatdownFilter = () => {
+  const tile = document.querySelector("#patdown-count-tile");
+  if (!tile) return;
+
+  const updatePatdownCards = () => {
+    document.querySelectorAll(".flight-card").forEach((card) => {
+      const hasPatdown = isPatdownCard(card);
+      card.classList.toggle("has-patdown", hasPatdown);
+    });
+  };
+
+  const toggleFilter = () => {
+    updatePatdownCards();
+    document.body.classList.toggle("patdown-filter-active");
+    tile.classList.toggle("is-active");
+  };
+
+  updatePatdownCards();
+  tile.addEventListener("click", toggleFilter);
+  tile.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleFilter();
+    }
+  });
+};
+
 document.addEventListener("DOMContentLoaded", () => {
+  applyStatusGateColors();
   updatePullCount();
   updateGateChangeCount();
   updateEnhancedCount();
+  updatePatdownCount();
   updateGateCount();
   applyTeamOfficerCounts();
-  applyStatusGateColors();
   enablePullFilter();
+  enableGateChangeFilter();
+  enablePatdownFilter();
   enablePullRandom();
   enableTeamsToggle();
 });

@@ -313,12 +313,34 @@ body {
   color: #ff6b6b;
 }
 
+.patdown-count span {
+  color: #ffd600;
+}
+
 .pull-count.is-active {
   border-color: rgba(48, 235, 255, 0.9);
   box-shadow: 0 0 18px rgba(48, 235, 255, 0.45);
 }
 
+.pull-count.gate-change-count.is-active {
+  border-color: rgba(255, 138, 36, 0.9);
+  box-shadow: 0 0 18px rgba(255, 138, 36, 0.45);
+}
+
+.patdown-count.is-active {
+  border-color: rgba(255, 214, 0, 0.9);
+  box-shadow: 0 0 18px rgba(255, 214, 0, 0.45);
+}
+
 .pull-filter-active .flight-card:not(.has-pull) {
+  display: none;
+}
+
+.gate-change-filter-active .flight-card:not(.gate-changed) {
+  display: none;
+}
+
+.patdown-filter-active .flight-card:not(.has-patdown) {
   display: none;
 }
 
