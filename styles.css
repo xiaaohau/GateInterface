@@ -76,6 +76,17 @@ body {
   box-shadow: 0 18px 35px rgba(5, 6, 8, 0.6);
 }
 
+.full-screen {
+  padding: 0;
+}
+
+.full-screen .frame {
+  min-height: 100vh;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
