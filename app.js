@@ -442,19 +442,38 @@ const updateGotTimes = () => {
 const updateRtGotForInProgress = () => {
   const cards = document.querySelectorAll(".flight-card");
   cards.forEach((card) => {
+    const statusEl = card.querySelector(".status");
+    const setStatus = (value) => {
+      if (!statusEl) return;
+      statusEl.textContent = value;
+      statusEl.classList.remove("on-time", "delayed");
+      statusEl.classList.add("rt-status");
+    };
     const times = card.querySelector(".flight-times");
-    if (!times) return;
+    if (!times) {
+      setStatus("RT --");
+      return;
+    }
     times.querySelectorAll(".got-time, .rt-time").forEach((el) => el.remove());
     const etdSpan = Array.from(times.querySelectorAll("span")).find((span) =>
       span.textContent.trim().startsWith("ETD")
     );
-    if (!etdSpan) return;
+    if (!etdSpan) {
+      setStatus("RT --");
+      return;
+    }
     const match = etdSpan.textContent.match(/(\d{4})hrs/);
-    if (!match) return;
+    if (!match) {
+      setStatus("RT --");
+      return;
+    }
     const etd = `${match[1]}hrs`;
     const got = subtractMinutes(etd, 70);
     const rt = got && got !== "-" ? subtractMinutes(got, 20) : "-";
-    if (!got || got === "-" || !rt || rt === "-") return;
+    if (!got || got === "-" || !rt || rt === "-") {
+      setStatus("RT --");
+      return;
+    }
     const gotEl = document.createElement("span");
     gotEl.className = "got-time";
     gotEl.textContent = `GOT: ${got}`;
@@ -463,6 +482,7 @@ const updateRtGotForInProgress = () => {
     rtEl.textContent = `RT: ${rt}`;
     times.appendChild(gotEl);
     times.appendChild(rtEl);
+    setStatus(`RT ${rt}`);
     const rtMatch = rt.match(/(\d{4})hrs/);
     if (rtMatch) {
       card.dataset.rtMinutes = String(toMinutes(`${rtMatch[1]}hrs`));

@@ -1756,6 +1756,12 @@ body {
   border-color: rgba(53, 196, 119, 0.45);
 }
 
+.status.rt-status {
+  color: #7fe7ff;
+  background: rgba(127, 231, 255, 0.18);
+  border-color: rgba(127, 231, 255, 0.5);
+}
+
 .flight-details {
   padding: 10px 12px;
   display: grid;
