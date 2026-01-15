@@ -334,7 +334,10 @@ const modalBackdrop = document.querySelector(".modal-backdrop");
 const modalClose = document.querySelector(".modal-close");
 const modalTitle = document.querySelector(".modal-title");
 const modalGate = document.querySelector(".modal-gate");
-const modalNextGate = document.querySelector(".modal-next-gate");
+const modalReportingTime = document.querySelector(".modal-reporting-time");
+const modalFlightNumber = document.querySelector(".modal-flight-number");
+const modalGateOpeningTime = document.querySelector(".modal-gate-opening-time");
+const modalTeamTabs = document.querySelector(".modal-team-tabs");
 const modalTeamList = document.querySelector(".modal-team-list");
 const modalCloseList = document.querySelector(".modal-close-list");
 const modalTeamBlock = document.querySelector(".modal-team");
@@ -345,8 +348,20 @@ const modalTeamTitle = modalTeamBlock ? modalTeamBlock.querySelector("div") : nu
 const modalSummaryLabels = modalSummary
   ? Array.from(modalSummary.querySelectorAll("div span:first-child"))
   : [];
-const DEFAULT_SUMMARY_LABELS = ["Gate", "Next Gate"];
-const ASSIGNED_SUMMARY_LABELS = ["Gate", "Flight"];
+const DEFAULT_SUMMARY_LABELS = [
+  "Gate",
+  "Reporting Time",
+  "Flight Number",
+  "Gate Opening Time",
+];
+const ASSIGNED_SUMMARY_LABELS = [
+  "Gate",
+  "Reporting Time",
+  "Flight Number",
+  "Gate Opening Time",
+];
+let modalTeams = [];
+let modalActiveTeamIndex = 0;
 const assignList = document.querySelector("#assign-gate-list");
 const assignFs = document.querySelector("#assign-fs");
 const assignSubmit = document.querySelector("#assign-submit");
@@ -528,10 +543,98 @@ const toMinutes = (timeLabel) => {
 };
 
 const setModalSummaryLabels = (labels) => {
-  if (modalSummaryLabels.length < 2) return;
-  modalSummaryLabels[0].textContent = labels[0];
-  modalSummaryLabels[1].textContent = labels[1];
+  if (!modalSummaryLabels.length) return;
+  labels.forEach((label, index) => {
+    if (modalSummaryLabels[index]) {
+      modalSummaryLabels[index].textContent = label;
+    }
+  });
 };
+
+const setModalGatePatdown = (isPatdown) => {
+  if (!modalGate) return;
+  modalGate.classList.toggle("is-patdown", Boolean(isPatdown));
+};
+
+const renderModalTeamMembers = (members) => {
+  if (!modalTeamList) return;
+  modalTeamList.innerHTML = (members || [])
+    .map(
+      (member) =>
+        `<li><span>${member.id} ${member.name}<br /><small>${member.phone}</small></span><span>✓</span></li>`
+    )
+    .join("");
+};
+
+const renderModalTeamTabs = () => {
+  if (!modalTeamTabs) return;
+  if (!modalTeams.length) {
+    modalTeamTabs.innerHTML = "";
+    modalTeamTabs.classList.add("is-hidden");
+    return;
+  }
+  modalTeamTabs.classList.remove("is-hidden");
+  modalTeamTabs.innerHTML = modalTeams
+    .map((team, index) => {
+      const isActive = index === modalActiveTeamIndex;
+      return `<button class="modal-team-tab${isActive ? " is-active" : ""}" type="button" role="tab" aria-selected="${isActive ? "true" : "false"}" data-index="${index}">${team.label}</button>`;
+    })
+    .join("");
+};
+
+const updateModalTeamSelection = (index) => {
+  if (!modalTeams.length) return;
+  const nextIndex = Math.max(0, Math.min(index, modalTeams.length - 1));
+  modalActiveTeamIndex = nextIndex;
+  renderModalTeamTabs();
+  const activeTeam = modalTeams[modalActiveTeamIndex];
+  if (modalGate) {
+    modalGate.textContent = activeTeam?.nextGate || "-";
+  }
+  setModalGatePatdown(activeTeam?.isPatdown);
+  if (modalReportingTime) {
+    modalReportingTime.textContent = activeTeam?.reportingTime || "-";
+  }
+  if (modalFlightNumber) {
+    modalFlightNumber.textContent = activeTeam?.flightNo || "-";
+  }
+  if (modalGateOpeningTime) {
+    modalGateOpeningTime.textContent = activeTeam?.gateOpeningTime || "-";
+  }
+  renderModalTeamMembers(activeTeam?.members || []);
+  if (modalTeamBlock) {
+    modalTeamBlock.classList.toggle(
+      "is-hidden",
+      !activeTeam || !activeTeam.members || activeTeam.members.length === 0
+    );
+  }
+};
+
+const setModalTeams = (teams) => {
+  modalTeams = Array.isArray(teams) ? teams : [];
+  modalActiveTeamIndex = 0;
+  if (modalTeams.length) {
+    updateModalTeamSelection(0);
+  } else {
+    renderModalTeamTabs();
+  }
+};
+
+const clearModalTeams = () => {
+  modalTeams = [];
+  modalActiveTeamIndex = 0;
+  renderModalTeamTabs();
+};
+
+if (modalTeamTabs) {
+  modalTeamTabs.addEventListener("click", (event) => {
+    const tab = event.target.closest(".modal-team-tab");
+    if (!tab) return;
+    const index = Number(tab.dataset.index);
+    if (!Number.isFinite(index)) return;
+    updateModalTeamSelection(index);
+  });
+}
 
 const setModalLayoutForAction = () => {
   if (modalSummary) modalSummary.classList.remove("is-hidden");
@@ -546,37 +649,47 @@ const setModalLayoutForAssigned = () => {
   if (modalCloseBlock) modalCloseBlock.classList.add("is-hidden");
   if (modalTeamTitle) modalTeamTitle.textContent = "Assigned Teams";
   setModalSummaryLabels(ASSIGNED_SUMMARY_LABELS);
+  clearModalTeams();
 };
 
 const openModal = (data) => {
   if (!modal || !modalBackdrop) return;
   setModalLayoutForAction();
+  const teamMembers = Array.isArray(data.teamMembers) ? data.teamMembers : [];
+  const closeOfficers = Array.isArray(data.closeOfficers) ? data.closeOfficers : [];
+  const teams = Array.isArray(data.teams) ? data.teams : [];
   if (modalTitle) modalTitle.textContent = data.title || "Action Details";
   if (modalGate) modalGate.textContent = data.gate || "Gate";
-  if (modalNextGate) modalNextGate.textContent = data.nextGate || "-";
-  if (modalTeamList) {
-    modalTeamList.innerHTML = data.teamMembers
-      .map(
-        (member) =>
-          `<li><span>${member.id} ${member.name}<br /><small>${member.phone}</small></span><span>✓</span></li>`
-      )
-      .join("");
+  if (teams.length) {
+    setModalTeams(teams);
+  } else {
+    clearModalTeams();
+    setModalGatePatdown(data.isPatdown);
+    if (modalReportingTime) {
+      modalReportingTime.textContent = data.reportingTime || data.reportTime || "-";
+    }
+    if (modalFlightNumber) {
+      modalFlightNumber.textContent = data.flightNo || "-";
+    }
+    if (modalGateOpeningTime) {
+      modalGateOpeningTime.textContent = data.gateOpeningTime || "-";
+    }
+    renderModalTeamMembers(teamMembers);
+    if (modalTeamBlock) {
+      modalTeamBlock.classList.toggle("is-hidden", teamMembers.length === 0);
+    }
   }
   if (modalCloseList) {
-    modalCloseList.innerHTML = data.closeOfficers
+    modalCloseList.innerHTML = closeOfficers
       .map((member) => `<li><span>${member.id} ${member.name}</span><span>✓</span></li>`)
       .join("");
   }
-  if (modalTeamBlock) {
-    modalTeamBlock.classList.toggle("is-hidden", data.teamMembers.length === 0);
-  }
   if (modalCloseBlock) {
-    modalCloseBlock.classList.toggle("is-hidden", data.closeOfficers.length === 0);
+    modalCloseBlock.classList.toggle("is-hidden", closeOfficers.length === 0);
   }
   modalBackdrop.classList.add("is-visible");
   modal.classList.add("is-visible");
 };
-
 const openAssignedTeamsModal = (card) => {
   if (!modal || !modalBackdrop || !card) return;
   setModalLayoutForAssigned();
@@ -585,10 +698,18 @@ const openAssignedTeamsModal = (card) => {
   const gateEl = card.querySelector(".gate-label");
   const gateText = gateEl ? gateEl.textContent.trim() : "Gate";
   if (modalGate) modalGate.textContent = gateText || "Gate";
+  setModalGatePatdown(false);
 
   const flightEl = card.querySelector(".flight-tag");
   const flightText = flightEl ? flightEl.textContent.replace("バ^", "").trim() : "-";
-  if (modalNextGate) modalNextGate.textContent = flightText || "-";
+  if (modalFlightNumber) modalFlightNumber.textContent = flightText || "-";
+  const etd = getEtdFromCard(card);
+  if (modalGateOpeningTime) {
+    modalGateOpeningTime.textContent = getGateOpeningTime(etd);
+  }
+  if (modalReportingTime) {
+    modalReportingTime.textContent = getReportingTime(etd);
+  }
 
   const assignedTeams = Array.from(
     card.querySelectorAll(".flight-progress .progress-row")
@@ -619,6 +740,114 @@ const openAssignedTeamsModal = (card) => {
   modal.classList.add("is-visible");
 };
 
+const normalizeGateLabel = (label) => label.replace(/\s+/g, " ").trim();
+
+const getGateLabelForCard = (card) => {
+  if (!card) return "Gate";
+  const newGate = card.querySelector(".new-gate")?.textContent.trim();
+  if (newGate) return `Gate ${newGate}`;
+  const gateEl = card.querySelector(".gate-label");
+  if (gateEl) return normalizeGateLabel(gateEl.textContent);
+  const banner = card.querySelector(".gate-banner");
+  if (!banner) return "Gate";
+  const cleaned = banner.textContent.replace("PULL TEAM", "").replace("CLOSE GATE", "");
+  return normalizeGateLabel(cleaned);
+};
+
+const formatNextGateLabel = (card) => {
+  return getGateLabelForCard(card);
+};
+
+const extractFlightNumber = (text) => {
+  if (!text) return "-";
+  const normalized = text.replace(/\s+/g, " ").trim();
+  const match = normalized.match(/[A-Z]{1,3}\s*\d+/);
+  return match ? match[0].replace(/\s+/g, " ") : normalized || "-";
+};
+
+const getFlightNumberFromCard = (card) => {
+  if (!card) return "-";
+  const flightEl = card.querySelector(".flight-tag");
+  return extractFlightNumber(flightEl ? flightEl.textContent : "");
+};
+
+const getEtdFromCard = (card) => {
+  const times = card?.querySelector(".flight-times");
+  if (!times) return null;
+  const etdSpan = Array.from(times.querySelectorAll("span")).find((span) =>
+    span.textContent.trim().startsWith("ETD")
+  );
+  if (!etdSpan) return null;
+  const match = etdSpan.textContent.match(/(\d{4})hrs/);
+  return match ? `${match[1]}hrs` : null;
+};
+
+const getGateOpeningTime = (etd) => {
+  if (!etd) return "-";
+  const got = subtractMinutes(etd, 70);
+  return got || "-";
+};
+
+const getReportingTime = (etd) => {
+  const got = getGateOpeningTime(etd);
+  if (!got || got === "-") return "-";
+  const rt = subtractMinutes(got, 20);
+  return rt || "-";
+};
+
+const getNextGateCandidates = (card) => {
+  const grid = card?.closest(".card-grid");
+  const cards = grid
+    ? Array.from(grid.querySelectorAll(".flight-card"))
+    : Array.from(document.querySelectorAll(".flight-card"));
+  if (!cards.length) return [];
+  if (!card) return cards;
+  const index = cards.indexOf(card);
+  const rotated = index === -1 ? cards : cards.slice(index + 1).concat(cards.slice(0, index));
+  const candidates = rotated.filter((item) => item !== card);
+  return candidates.length ? candidates : [card];
+};
+
+const getTeamMemberCountFromLabel = (label) => {
+  const match = label.match(/\((\d+)\)/);
+  const count = match ? Number(match[1]) : 3;
+  return Number.isFinite(count) && count > 0 ? count : 3;
+};
+
+const buildPullTeams = (card) => {
+  if (!card) return [];
+  const rows = Array.from(card.querySelectorAll(".flight-progress .progress-row"));
+  const candidates = getNextGateCandidates(card);
+  const seen = new Set();
+  let candidateIndex = 0;
+
+  return rows.reduce((acc, row) => {
+    const label = row.querySelector("span:first-child")?.textContent.trim();
+    if (!label || seen.has(label)) return acc;
+    seen.add(label);
+    const explicitGate = row.dataset.nextGate;
+    const nextCard = candidates[candidateIndex % (candidates.length || 1)];
+    const nextGate = explicitGate || (nextCard ? formatNextGateLabel(nextCard) : "-");
+    const isPatdown = Boolean(nextCard && nextCard.querySelector(".badge-patdown"));
+    const etd = nextCard ? getEtdFromCard(nextCard) : null;
+    const gateOpeningTime = getGateOpeningTime(etd);
+    const reportingTime = getReportingTime(etd);
+    const flightNo = nextCard ? getFlightNumberFromCard(nextCard) : "-";
+    const memberCount = getTeamMemberCountFromLabel(label);
+    acc.push({
+      label,
+      nextGate,
+      isPatdown,
+      reportingTime,
+      flightNo,
+      gateOpeningTime,
+      members: pickTeamMembers(memberCount),
+    });
+    candidateIndex += 1;
+    return acc;
+  }, []);
+};
+
 const closeModal = () => {
   if (!modal || !modalBackdrop) return;
   modalBackdrop.classList.remove("is-visible");
@@ -642,9 +871,15 @@ document.addEventListener("click", (event) => {
   const nextCard = card ? card.nextElementSibling : null;
   const nextGateEl = nextCard ? nextCard.querySelector(".gate-banner") : null;
   const nextGateText = nextGateEl ? nextGateEl.textContent.replace("PULL TEAM", "").trim() : "-";
-  const reportTime = etdText !== "-" ? subtractMinutes(etdText, 30) : "-";
-  const teamMembers = pull ? pickTeamMembers() : [];
+  const etdValue = etdText !== "-" ? etdText : null;
+  const reportingTime = getReportingTime(etdValue);
+  const gateOpeningTime = getGateOpeningTime(etdValue);
+  const flightNo = card ? getFlightNumberFromCard(card) : flightText;
+  const reportTime = reportingTime;
+  const teams = pull ? buildPullTeams(card) : [];
+  const teamMembers = pull && teams.length === 0 ? pickTeamMembers() : [];
   const closeOfficers = close ? pickCloseOfficers() : [];
+  const isPatdown = pull ? Boolean(card && card.querySelector(".badge-patdown")) : false;
 
   openModal({
     title: pull ? "Pull Team Officers" : "Close Gate Officers",
@@ -652,10 +887,14 @@ document.addEventListener("click", (event) => {
     nextGate: nextGateText,
     etd: etdText,
     std: stdText,
-    flightNo: flightText,
+    flightNo,
     reportTime,
+    reportingTime,
+    gateOpeningTime,
+    isPatdown,
     teamMembers,
     closeOfficers,
+    teams,
   });
 });
 

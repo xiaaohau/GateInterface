@@ -1519,11 +1519,11 @@ body {
   transform: translate(-50%, -50%) scale(0.96);
   top: 50%;
   left: 50%;
-  width: min(420px, 90vw);
+  width: min(640px, 94vw);
   background: #1e2228;
   border: 1px solid #31343a;
   border-radius: 14px;
-  padding: 16px;
+  padding: 22px;
   opacity: 0;
   pointer-events: none;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
@@ -1571,6 +1571,32 @@ body {
   gap: 10px;
 }
 
+.modal-team-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.modal-team-tab {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #232830;
+  color: #f5f2ea;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.modal-team-tab.is-active {
+  background: #30ebff;
+  color: #121418;
+  border-color: #30ebff;
+  box-shadow: 0 0 12px rgba(48, 235, 255, 0.4);
+}
+
 .modal-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1600,12 +1626,12 @@ body {
   letter-spacing: 0.04em;
 }
 
-.modal-next-gate {
-  color: #f0a73a;
-}
-
 .modal-gate {
   text-transform: uppercase;
+}
+
+.modal-summary .modal-gate.is-patdown {
+  color: #ff4d4d;
 }
 
 .modal-flight {
