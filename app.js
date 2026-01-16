@@ -69,7 +69,8 @@ const updateGateChangeCount = () => {
 const updateEnhancedCount = () => {
   const countEl = document.querySelector("#enhanced-count");
   if (!countEl) return;
-  const count = document.querySelectorAll(".badge-enhanced").length;
+  const count = document.querySelectorAll(".in-progress-page .flight-card.has-screening")
+    .length;
   countEl.textContent = String(count);
 };
 
@@ -152,6 +153,24 @@ const enableGateChangeFilter = () => {
   });
 };
 
+const enableEnhancedFilter = () => {
+  const tile = document.querySelector("#enhanced-count-tile");
+  if (!tile) return;
+
+  const toggleFilter = () => {
+    document.body.classList.toggle("enhanced-filter-active");
+    tile.classList.toggle("is-active");
+  };
+
+  tile.addEventListener("click", toggleFilter);
+  tile.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleFilter();
+    }
+  });
+};
+
 const enablePatdownFilter = () => {
   const tile = document.querySelector("#patdown-count-tile");
   if (!tile) return;
@@ -211,14 +230,19 @@ const enableAssignedTeamsCards = () => {
 
 document.addEventListener("DOMContentLoaded", () => {
   applyStatusGateColors();
+  updateScreeningTypes();
   updatePullCount();
   updateGateChangeCount();
   updateEnhancedCount();
   updatePatdownCount();
   updateGateCount();
+  applyAssignmentsToCards();
   applyTeamOfficerCounts();
+  setupFsLeaderAssignment();
+  enableAssignClose();
   enablePullFilter();
   enableGateChangeFilter();
+  enableEnhancedFilter();
   enablePatdownFilter();
   enableAssignedTeamsCards();
   enablePullRandom();
@@ -255,6 +279,72 @@ const enableTeamsToggle = () => {
     updateLabel();
   });
   updateLabel();
+};
+
+const enableAssignClose = () => {
+  const button = document.querySelector("#assign-close");
+  if (!button) return;
+  button.addEventListener("click", () => {
+    window.close();
+    if (!window.closed) {
+      window.history.back();
+    }
+  });
+};
+
+const setupFsLeaderAssignment = () => {
+  const trigger = document.querySelector("#assign-fs-leader");
+  const panel = document.querySelector("#fs-leader-panel");
+  const list = document.querySelector("#fs-leader-list");
+  const save = document.querySelector("#fs-leader-save");
+  const cancel = document.querySelector("#fs-leader-cancel");
+  if (!trigger || !panel || !list || !save || !cancel) return;
+
+  const leaders = ["A. Rahman", "S. Lim", "K. Wong", "J. Tan"];
+  let selectedName = "";
+
+  const normalizeName = (value) =>
+    String(value || "").replace(/^FS\s*-\s*/i, "").trim();
+
+  const setSelected = (name) => {
+    selectedName = name;
+    list.querySelectorAll(".fs-leader-option").forEach((btn) => {
+      btn.classList.toggle("is-selected", btn.dataset.name === name);
+    });
+  };
+
+  list.innerHTML = leaders
+    .map(
+      (name) =>
+        `<button class="assign-gate fs-leader-option" type="button" data-name="${name}">FS - ${name}</button>`
+    )
+    .join("");
+
+  const storedName = loadFsLeaderFromStorage();
+  const currentName = storedName || normalizeName(fsName ? fsName.textContent : "");
+  if (currentName) applyFsLeaderToPage(currentName);
+  if (leaders.includes(currentName)) setSelected(currentName);
+
+  list.addEventListener("click", (event) => {
+    const btn = event.target.closest(".fs-leader-option");
+    if (!btn) return;
+    setSelected(btn.dataset.name || "");
+  });
+
+  const hidePanel = () => panel.classList.add("is-hidden");
+
+  trigger.addEventListener("click", () => {
+    panel.classList.toggle("is-hidden");
+  });
+
+  cancel.addEventListener("click", hidePanel);
+
+  save.addEventListener("click", () => {
+    if (!selectedName) return;
+    applyFsLeaderToPage(selectedName);
+    saveFsLeaderToStorage(selectedName);
+    hidePanel();
+  });
 };
 
 const enablePullRandom = () => {
@@ -343,7 +433,7 @@ const modalCloseList = document.querySelector(".modal-close-list");
 const modalTeamBlock = document.querySelector(".modal-team");
 const modalCloseBlock = document.querySelector(".modal-close-team");
 const modalSummary = document.querySelector(".modal-summary");
-const modalAction = document.querySelector(".modal-action");
+const modalAction = modal ? modal.querySelector(".modal-action") : null;
 const modalTeamTitle = modalTeamBlock ? modalTeamBlock.querySelector("div") : null;
 const modalSummaryLabels = modalSummary
   ? Array.from(modalSummary.querySelectorAll("div span:first-child"))
@@ -369,6 +459,150 @@ const assignSummary = document.querySelector("#assign-summary");
 const fsName = document.querySelector("#fs-name");
 
 const assignments = {};
+
+const STORAGE_KEYS = {
+  fsLeader: "gateinterface.fsLeader",
+  assignments: "gateinterface.assignments",
+};
+
+const normalizeFsLeaderName = (value) =>
+  String(value || "").replace(/^FS\s*-\s*/i, "").trim();
+
+const loadFsLeaderFromStorage = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.fsLeader);
+    return raw ? normalizeFsLeaderName(raw) : "";
+  } catch (error) {
+    return "";
+  }
+};
+
+const saveFsLeaderToStorage = (name) => {
+  const normalized = normalizeFsLeaderName(name);
+  if (!normalized) return;
+  try {
+    localStorage.setItem(STORAGE_KEYS.fsLeader, normalized);
+  } catch (error) {
+    // Ignore storage errors.
+  }
+};
+
+const applyFsLeaderToPage = (name) => {
+  const label = name || "Not Assigned";
+  if (fsName) fsName.textContent = label;
+};
+
+const loadAssignmentsFromStorage = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.assignments);
+    if (!raw) {
+      Object.keys(assignments).forEach((key) => delete assignments[key]);
+      return;
+    }
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== "object") {
+      Object.keys(assignments).forEach((key) => delete assignments[key]);
+      return;
+    }
+    Object.keys(assignments).forEach((key) => delete assignments[key]);
+    Object.entries(data).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        assignments[key] = value;
+      }
+    });
+  } catch (error) {
+    // Ignore storage errors.
+  }
+};
+
+const saveAssignmentsToStorage = () => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.assignments, JSON.stringify(assignments));
+  } catch (error) {
+    // Ignore storage errors.
+  }
+};
+
+const applyAssignmentsToCards = () => {
+  const page = document.querySelector(".in-progress-page");
+  if (!page) return;
+  const entries = Object.entries(assignments);
+  page.querySelectorAll(".flight-card").forEach((card) => {
+    const gateEl = card.querySelector(".gate-label");
+    const fsBadge = card.querySelector(".fs-badge");
+    if (!gateEl || !fsBadge) return;
+    const gateText = gateEl.textContent.replace("Gate", "").trim();
+    const gateLabel = `Gate ${gateText}`;
+    const assigned = entries.find(
+      ([, gates]) => Array.isArray(gates) && gates.includes(gateLabel)
+    );
+    if (assigned) {
+      fsBadge.textContent = `FS: ${assigned[0].replace("FS - ", "")}`;
+    } else {
+      fsBadge.textContent = "FS: Unassigned";
+    }
+  });
+};
+
+const refreshAssignmentsFromStorage = () => {
+  loadAssignmentsFromStorage();
+  applyAssignmentsToCards();
+  document.dispatchEvent(new Event("assignments:updated"));
+};
+
+const refreshFsLeaderFromStorage = () => {
+  const stored = loadFsLeaderFromStorage();
+  applyFsLeaderToPage(stored);
+};
+
+const isPageReload = () => {
+  const navEntry = performance.getEntriesByType
+    ? performance.getEntriesByType("navigation")[0]
+    : null;
+  if (navEntry && navEntry.type) {
+    return navEntry.type === "reload";
+  }
+  if (performance.navigation) {
+    return performance.navigation.type === 1;
+  }
+  return false;
+};
+
+const resetPersistentStateOnReload = () => {
+  if (!isPageReload()) return false;
+  try {
+    localStorage.removeItem(STORAGE_KEYS.fsLeader);
+    localStorage.removeItem(STORAGE_KEYS.assignments);
+  } catch (error) {
+    // Ignore storage errors.
+  }
+  applyFsLeaderToPage("");
+  Object.keys(assignments).forEach((key) => delete assignments[key]);
+  applyAssignmentsToCards();
+  document.dispatchEvent(new Event("assignments:updated"));
+  return true;
+};
+
+const initializePersistentState = () => {
+  const didReset = resetPersistentStateOnReload();
+  if (!didReset) {
+    loadAssignmentsFromStorage();
+    applyFsLeaderToPage(loadFsLeaderFromStorage());
+    applyAssignmentsToCards();
+    document.dispatchEvent(new Event("assignments:updated"));
+  }
+};
+
+initializePersistentState();
+
+window.addEventListener("storage", (event) => {
+  if (event.key === STORAGE_KEYS.assignments) {
+    refreshAssignmentsFromStorage();
+  }
+  if (event.key === STORAGE_KEYS.fsLeader) {
+    refreshFsLeaderFromStorage();
+  }
+});
 
 const staffPool = [
   { id: "OS-1142", name: "A. Rahman", phone: "+65 9123 4567" },
@@ -573,7 +807,10 @@ const setModalSummaryLabels = (labels) => {
 
 const setModalGatePatdown = (isPatdown) => {
   if (!modalGate) return;
-  modalGate.classList.toggle("is-patdown", Boolean(isPatdown));
+  const isActive = Boolean(isPatdown);
+  modalGate.classList.toggle("is-patdown", isActive);
+  const gateBox = modalGate.closest("div");
+  if (gateBox) gateBox.classList.toggle("is-patdown", isActive);
 };
 
 const renderModalTeamMembers = (members) => {
@@ -679,6 +916,9 @@ const openModal = (data) => {
   const closeOfficers = Array.isArray(data.closeOfficers) ? data.closeOfficers : [];
   const teams = Array.isArray(data.teams) ? data.teams : [];
   if (modalTitle) modalTitle.textContent = data.title || "Action Details";
+  if (modalAction && data.actionLabel) {
+    modalAction.textContent = data.actionLabel;
+  }
   if (modalGate) modalGate.textContent = data.gate || "Gate";
   if (teams.length) {
     setModalTeams(teams);
@@ -713,6 +953,7 @@ const openModal = (data) => {
 const openAssignedTeamsModal = (card) => {
   if (!modal || !modalBackdrop || !card) return;
   setModalLayoutForAssigned();
+  if (modalAction) modalAction.classList.add("is-hidden");
   if (modalTitle) modalTitle.textContent = "Assigned Teams";
 
   const gateEl = card.querySelector(".gate-label");
@@ -742,11 +983,22 @@ const openAssignedTeamsModal = (card) => {
   });
 
   if (modalTeamList) {
-    modalTeamList.innerHTML = assignedTeams.length
-      ? assignedTeams
+    const withMainTag = assignedTeams.map((team) => ({
+      ...team,
+      label: team.team,
+    }));
+    const eligible = withMainTag
+      .map((team, index) => ({ ...team, index }))
+      .filter((team) => /\(3\)/.test(team.team));
+    if (eligible.length) {
+      const picked = eligible[Math.floor(Math.random() * eligible.length)];
+      withMainTag[picked.index].label = `${picked.team} - Main Team`;
+    }
+    modalTeamList.innerHTML = withMainTag.length
+      ? withMainTag
           .map(
             (team) =>
-              `<li><span>${team.team}</span><span>${team.progress}</span></li>`
+              `<li><span>${team.label}</span><span>${team.progress}</span></li>`
           )
           .join("")
       : "<li><span>No assigned teams</span><span>-</span></li>";
@@ -776,6 +1028,99 @@ const getGateLabelForCard = (card) => {
 
 const formatNextGateLabel = (card) => {
   return getGateLabelForCard(card);
+};
+
+const SCREENING_LOGICS = [
+  { id: "1", cont: true, enh: "55%", palm: "" },
+  { id: "2", cont: true, enh: "27%", palm: "" },
+  { id: "3", cont: false, enh: "27%", palm: "" },
+  { id: "4", cont: false, enh: "17%", palm: "" },
+  { id: "5", cont: false, enh: "12%", palm: "10%" },
+];
+
+const getScreeningLogicForCard = (card) => {
+  if (!card) return null;
+  const stored = String(card.dataset.screeningLogic || "").trim();
+  if (stored) {
+    const normalized = stored.replace(/^logic-?/i, "").trim();
+    const match = SCREENING_LOGICS.find((logic) => logic.id === normalized);
+    if (match) return match;
+  }
+  const picked = SCREENING_LOGICS[Math.floor(Math.random() * SCREENING_LOGICS.length)];
+  card.dataset.screeningLogic = picked.id;
+  return picked;
+};
+
+const updateScreeningTypes = () => {
+  const cards = Array.from(
+    document.querySelectorAll(".in-progress-page .flight-card")
+  );
+  if (!cards.length) return;
+
+  const selected = new Set(
+    cards.filter((card) => card.dataset.screeningShow === "true")
+  );
+  const count = Math.min(6, cards.length);
+  const needed = count - selected.size;
+  const pool = cards.filter((card) => !card.dataset.screeningShow);
+  if (needed > 0) {
+    const picks = pool.sort(() => 0.5 - Math.random()).slice(0, needed);
+    picks.forEach((card) => selected.add(card));
+  }
+
+  cards.forEach((card) => {
+    const shouldShow = selected.has(card);
+    card.dataset.screeningShow = shouldShow ? "true" : "false";
+    card.classList.toggle("has-screening", shouldShow);
+  });
+
+  cards.forEach((card) => {
+    const details = card.querySelector(".flight-details");
+    if (!details) return;
+    let container = details.querySelector(".flight-screening");
+    if (!container) {
+      container = document.createElement("div");
+      container.className = "flight-screening";
+      details.appendChild(container);
+    }
+
+    if (card.dataset.screeningShow !== "true") {
+      container.classList.add("is-hidden");
+      container.innerHTML = "";
+      return;
+    }
+
+    const logic = getScreeningLogicForCard(card);
+    const lines = [];
+    if (logic?.cont) {
+      lines.push({ text: "CONT. SWAB", className: "screening-left" });
+    }
+    if (logic?.enh) {
+      lines.push({
+        text: `ENHN. SCRN: ${logic.enh}`,
+        className: "screening-middle",
+      });
+    }
+    if (logic?.palm) {
+      lines.push({
+        text: `PALM SWAB: ${logic.palm}`,
+        className: "screening-right",
+      });
+    }
+
+    if (!lines.length) {
+      container.classList.add("is-hidden");
+      container.innerHTML = "";
+      return;
+    }
+
+    container.classList.remove("is-hidden");
+    container.innerHTML = lines
+      .map((line) => `<span class="${line.className}">${line.text}</span>`)
+      .join("");
+  });
+
+  updateEnhancedCount();
 };
 
 const extractFlightNumber = (text) => {
@@ -900,6 +1245,7 @@ document.addEventListener("click", (event) => {
   const teamMembers = pull && teams.length === 0 ? pickTeamMembers() : [];
   const closeOfficers = close ? pickCloseOfficers() : [];
   const isPatdown = pull ? Boolean(card && card.querySelector(".badge-patdown")) : false;
+  const actionLabel = pull ? "Pull Team Completed" : "Gate Closed";
 
   openModal({
     title: pull ? "Pull Team Officers" : "Close Gate Officers",
@@ -912,6 +1258,7 @@ document.addEventListener("click", (event) => {
     reportingTime,
     gateOpeningTime,
     isPatdown,
+    actionLabel,
     teamMembers,
     closeOfficers,
     teams,
@@ -1037,6 +1384,7 @@ if (assignSubmit) {
       }
     });
     selectedButtons.forEach((btn) => btn.remove());
+    saveAssignmentsToStorage();
     document.dispatchEvent(new Event("assignments:updated"));
     document.dispatchEvent(new Event("assignments:updated"));
   });

@@ -327,6 +327,11 @@ body {
   box-shadow: 0 0 18px rgba(255, 138, 36, 0.45);
 }
 
+.pull-count.enhanced-count.is-active {
+  border-color: rgba(255, 107, 107, 0.9);
+  box-shadow: 0 0 18px rgba(255, 107, 107, 0.45);
+}
+
 .patdown-count.is-active {
   border-color: rgba(255, 214, 0, 0.9);
   box-shadow: 0 0 18px rgba(255, 214, 0, 0.45);
@@ -337,6 +342,10 @@ body {
 }
 
 .gate-change-filter-active .flight-card:not(.gate-changed) {
+  display: none;
+}
+
+.enhanced-filter-active .flight-card:not(.has-screening) {
   display: none;
 }
 
@@ -1378,6 +1387,18 @@ body {
   margin-top: 12px;
 }
 
+.fs-leader-panel {
+  margin-top: 12px;
+}
+
+.fs-leader-panel .assign-panel {
+  max-width: 520px;
+}
+
+.fs-leader-list {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
 .assign-view {
   background: #1f242d;
   color: #f5f2ea;
@@ -1630,8 +1651,13 @@ body {
   text-transform: uppercase;
 }
 
-.modal-summary .modal-gate.is-patdown {
-  color: #ff4d4d;
+.modal-summary div.is-patdown {
+  background: #c52828;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.modal-summary div.is-patdown span {
+  color: #fff;
 }
 
 .modal-flight {
@@ -1900,6 +1926,46 @@ body {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #c9c7c0;
+}
+
+.flight-screening {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.flight-screening span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.flight-screening span + span::before {
+  content: "|";
+  margin: 0 8px 0 2px;
+  color: #8a8f97;
+}
+
+.flight-screening .screening-left {
+  text-align: left;
+}
+
+.flight-screening .screening-middle {
+  text-align: left;
+}
+
+.flight-screening .screening-right {
+  text-align: right;
+  text-align: left;
 }
 
 .flight-progress {
