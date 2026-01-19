@@ -374,6 +374,14 @@ body {
   filter: brightness(1.1);
 }
 
+#toggle-teams {
+  display: none;
+}
+
+#pull-random {
+  display: none;
+}
+
 .last-updated {
   font-weight: 600;
   letter-spacing: 0.02em;
