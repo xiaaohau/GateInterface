@@ -52,25 +52,41 @@ if (activeTab) {
 
 applyProgressColors();
 
+const getInProgressCards = () => {
+  const page = document.querySelector(".in-progress-page");
+  if (!page) return [];
+  const mainGrid = page.querySelector(".card-grid:not(.history-grid)");
+  const scope = mainGrid || page;
+  return Array.from(scope.querySelectorAll(".flight-card"));
+};
+
+const getVisibleInProgressCards = () =>
+  getInProgressCards().filter((card) => !card.classList.contains("is-hidden"));
+
 const updatePullCount = () => {
   const countEl = document.querySelector("#pull-count");
   if (!countEl) return;
-  const count = document.querySelectorAll(".pull-team").length;
+  const count = getVisibleInProgressCards().filter((card) =>
+    card.querySelector(".pull-team")
+  ).length;
   countEl.textContent = String(count);
 };
 
 const updateGateChangeCount = () => {
   const countEl = document.querySelector("#gate-change-count");
   if (!countEl) return;
-  const count = document.querySelectorAll(".gate-changed").length;
+  const count = getVisibleInProgressCards().filter((card) =>
+    card.classList.contains("gate-changed")
+  ).length;
   countEl.textContent = String(count);
 };
 
 const updateEnhancedCount = () => {
   const countEl = document.querySelector("#enhanced-count");
   if (!countEl) return;
-  const count = document.querySelectorAll(".in-progress-page .flight-card.has-screening")
-    .length;
+  const count = getVisibleInProgressCards().filter((card) =>
+    card.classList.contains("has-screening")
+  ).length;
   countEl.textContent = String(count);
 };
 
@@ -85,20 +101,14 @@ const isPatdownCard = (card) => {
 const updatePatdownCount = () => {
   const countEl = document.querySelector("#patdown-count");
   if (!countEl) return;
-  const count = Array.from(document.querySelectorAll(".flight-card")).filter(isPatdownCard)
-    .length;
+  const count = getVisibleInProgressCards().filter(isPatdownCard).length;
   countEl.textContent = String(count);
 };
 
 const updateGateCount = () => {
   const gateEl = document.querySelector("#gate-count");
   if (!gateEl) return;
-  const historyGrid = document.querySelector("#history-grid");
-  const scope = historyGrid
-    ? document.querySelector(".in-progress-page .card-grid:not(.history-grid)") ||
-      document
-    : document;
-  const count = scope.querySelectorAll(".gate-banner").length;
+  const count = getVisibleInProgressCards().length;
   gateEl.textContent = String(count);
 };
 
@@ -173,7 +183,7 @@ const enablePullFilter = () => {
   const tile = document.querySelector("#pull-count-tile");
   if (!tile) return;
 
-  document.querySelectorAll(".flight-card").forEach((card) => {
+  getInProgressCards().forEach((card) => {
     if (card.querySelector(".pull-team")) {
       card.classList.add("has-pull");
     } else {
@@ -236,7 +246,7 @@ const enablePatdownFilter = () => {
   if (!tile) return;
 
   const updatePatdownCards = () => {
-    document.querySelectorAll(".flight-card").forEach((card) => {
+    getInProgressCards().forEach((card) => {
       const hasPatdown = isPatdownCard(card);
       card.classList.toggle("has-patdown", hasPatdown);
     });
@@ -798,24 +808,28 @@ const enablePullRandom = () => {
   `;
 
   const normalizePullButtons = () => {
-    document.querySelectorAll(".pull-team").forEach((badge) => {
-      if (badge.tagName === "BUTTON") return;
-      const replacement = document.createElement("button");
-      replacement.type = "button";
-      replacement.className = "pull-team";
-      replacement.setAttribute("aria-label", "Pull Team");
-      replacement.setAttribute("data-label", "Pull Team");
-      replacement.innerHTML = pullIcon;
-      badge.replaceWith(replacement);
+    getInProgressCards().forEach((card) => {
+      card.querySelectorAll(".pull-team").forEach((badge) => {
+        if (badge.tagName === "BUTTON") return;
+        const replacement = document.createElement("button");
+        replacement.type = "button";
+        replacement.className = "pull-team";
+        replacement.setAttribute("aria-label", "Pull Team");
+        replacement.setAttribute("data-label", "Pull Team");
+        replacement.innerHTML = pullIcon;
+        badge.replaceWith(replacement);
+      });
     });
   };
 
   const applyRandomPull = () => {
     normalizePullButtons();
-    document.querySelectorAll(".pull-team, .close-gate").forEach((badge) => badge.remove());
-    document.querySelectorAll(".flight-card").forEach((card) => card.classList.remove("has-pull"));
+    getInProgressCards().forEach((card) => {
+      card.querySelectorAll(".pull-team, .close-gate").forEach((badge) => badge.remove());
+      card.classList.remove("has-pull");
+    });
 
-    const cards = Array.from(document.querySelectorAll(".flight-card"));
+    const cards = getInProgressCards();
     if (cards.length === 0) return;
     const count = Math.max(1, Math.floor(cards.length / 3));
     const shuffled = cards.sort(() => 0.5 - Math.random()).slice(0, count);
@@ -1167,6 +1181,7 @@ const updateRtGotForInProgress = () => {
     }
     reorderInProgressTimes(times);
   });
+  applyRtWindowFilter();
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1420,7 +1435,7 @@ const openAssignedTeamsModal = (card) => {
   setModalGatePatdown(false);
 
   const flightEl = card.querySelector(".flight-tag");
-  const flightText = flightEl ? flightEl.textContent.replace("バ^", "").trim() : "-";
+  const flightText = extractFlightNumber(flightEl ? flightEl.textContent : "");
   if (modalFlightNumber) modalFlightNumber.textContent = flightText || "-";
   const etd = getEtdFromCard(card);
   if (modalGateOpeningTime) {
@@ -1706,6 +1721,29 @@ const getCurrentMinutes = () => {
   return now.getHours() * 60 + now.getMinutes();
 };
 
+const RT_WINDOW_MINUTES = 90;
+
+const applyRtWindowFilter = () => {
+  if (!document.querySelector(".in-progress-page")) return;
+  const nowMinutes = getCurrentMinutes();
+  const cards = getInProgressCards();
+  cards.forEach((card) => {
+    const rtMinutes = Number(card.dataset.rtMinutes);
+    if (!Number.isFinite(rtMinutes)) {
+      card.classList.remove("is-hidden");
+      return;
+    }
+    const minutesSinceRt = (nowMinutes - rtMinutes + 1440) % 1440;
+    const isWithinWindow = minutesSinceRt <= RT_WINDOW_MINUTES;
+    card.classList.toggle("is-hidden", !isWithinWindow);
+  });
+  updateGateCount();
+  updatePullCount();
+  updateGateChangeCount();
+  updateEnhancedCount();
+  updatePatdownCount();
+};
+
 const movePastEtdToHistory = () => {
   const page = document.querySelector(".in-progress-page");
   const historyGrid = document.querySelector("#history-grid");
@@ -1722,7 +1760,7 @@ const movePastEtdToHistory = () => {
       historyGrid.appendChild(card);
     }
   });
-  updateGateCount();
+  applyRtWindowFilter();
   if (historyModal && historyModal.classList.contains("is-visible")) {
     renderHistoryCards();
   }
@@ -1820,7 +1858,7 @@ document.addEventListener("click", (event) => {
   const banner = badge.closest(".gate-banner");
   const gateText = banner ? banner.textContent.replace("PULL TEAM", "").trim() : "Gate";
   const flightEl = card ? card.querySelector(".flight-tag") : null;
-  const flightText = flightEl ? flightEl.textContent.replace("✈", "").trim() : "-";
+  const flightText = card ? getFlightNumberFromCard(card) : "-";
   const etdText = card ? getTimeLabelFromCard(card, "ETD") : "-";
   const stdText = card ? getTimeLabelFromCard(card, "STD") : "-";
   const nextCard = card ? card.nextElementSibling : null;
