@@ -93,7 +93,12 @@ const updatePatdownCount = () => {
 const updateGateCount = () => {
   const gateEl = document.querySelector("#gate-count");
   if (!gateEl) return;
-  const count = document.querySelectorAll(".gate-banner").length;
+  const historyGrid = document.querySelector("#history-grid");
+  const scope = historyGrid
+    ? document.querySelector(".in-progress-page .card-grid:not(.history-grid)") ||
+      document
+    : document;
+  const count = scope.querySelectorAll(".gate-banner").length;
   gateEl.textContent = String(count);
 };
 
@@ -106,6 +111,61 @@ const applyTeamOfficerCounts = () => {
     if (!Number.isFinite(teamId)) return;
     const officerCount = teamId % 3 === 0 ? 2 : 3;
     span.textContent = `Team ${teamId} (${officerCount})`;
+  });
+};
+
+const applyPatdownGateBanner = () => {
+  document.querySelectorAll(".flight-card").forEach((card) => {
+    const hasPatdownBadge = Boolean(card.querySelector(".badge-patdown"));
+    card.classList.toggle("patdown-gate", hasPatdownBadge);
+  });
+};
+
+const DOCKS_PER_ROW = 4;
+
+const getDockCountForCard = (card) => {
+  if (!card) return 0;
+  const stored = Number(card.dataset.dockCount);
+  if (Number.isFinite(stored) && stored >= 0 && stored <= DOCKS_PER_ROW) {
+    return stored;
+  }
+  const randomCount = Math.floor(Math.random() * DOCKS_PER_ROW) + 1;
+  card.dataset.dockCount = String(randomCount);
+  return randomCount;
+};
+
+const buildDockMeterMarkup = (dockCount) => {
+  const clamped = Math.max(0, Math.min(DOCKS_PER_ROW, dockCount));
+  const docks = Array.from({ length: DOCKS_PER_ROW }, (_, idx) => {
+    const activeClass = idx < clamped ? " is-active" : "";
+    return `<span class="progress-dock${activeClass}"></span>`;
+  }).join("");
+  return `<span class="dock-meter" aria-hidden="true">${docks}</span>`;
+};
+
+const applyAssignedTeamDocks = () => {
+  const page = document.querySelector(".in-progress-page");
+  if (!page) return;
+  page.querySelectorAll(".flight-card").forEach((card) => {
+    const dockCount = getDockCountForCard(card);
+    card.querySelectorAll(".flight-progress .progress-row").forEach((row) => {
+      const spans = Array.from(row.children).filter(
+        (child) => child.tagName === "SPAN"
+      );
+      let indicator = spans[spans.length - 1];
+      if (!indicator) {
+        indicator = document.createElement("span");
+        row.appendChild(indicator);
+      }
+      indicator.classList.add("dock-meter");
+      indicator.innerHTML = "";
+      for (let i = 0; i < DOCKS_PER_ROW; i += 1) {
+        const dock = document.createElement("span");
+        dock.className = "progress-dock";
+        if (i < dockCount) dock.classList.add("is-active");
+        indicator.appendChild(dock);
+      }
+    });
   });
 };
 
@@ -213,7 +273,7 @@ const enableAssignedTeamsCards = () => {
   });
 
   page.addEventListener("click", (event) => {
-    if (event.target.closest(".pull-team, .close-gate")) return;
+    if (event.target.closest(".pull-team, .close-gate, .edit-flight")) return;
     const card = event.target.closest(".flight-card");
     if (!card) return;
     openAssignedTeamsModal(card);
@@ -228,9 +288,358 @@ const enableAssignedTeamsCards = () => {
   });
 };
 
+let editingFlightCard = null;
+
+const normalizeGateInput = (value) =>
+  String(value || "")
+    .replace(/^gate\s*/i, "")
+    .trim();
+
+const formatGateLabel = (value) => {
+  const gate = normalizeGateInput(value);
+  return gate ? `Gate ${gate}` : "Gate --";
+};
+
+const normalizeFlightNumber = (value) => {
+  const trimmed = String(value || "").trim().toUpperCase();
+  if (!trimmed) return "";
+  const extracted = extractFlightNumber(trimmed);
+  const normalized = extracted && extracted !== "-" ? extracted : trimmed;
+  return normalized.replace(/^([A-Z]{1,3})(\d+)/, "$1 $2");
+};
+
+const getFlightTagPrefix = () => {
+  const sample = document.querySelector(".flight-card .flight-tag");
+  if (!sample) return "";
+  const raw = sample.textContent || "";
+  const flightNo = extractFlightNumber(raw);
+  if (!flightNo || flightNo === "-") return "";
+  const prefix = raw.replace(flightNo, "").trim();
+  return prefix ? `${prefix} ` : "";
+};
+
+const formatFlightTag = (flightNo) => {
+  const prefix = getFlightTagPrefix();
+  const normalized = normalizeFlightNumber(flightNo);
+  return `${prefix}${normalized || "--"}`;
+};
+
+const normalizeTimeInput = (value) => {
+  const digitsRaw = String(value || "").replace(/\D/g, "");
+  if (!digitsRaw) return "";
+  const digits = digitsRaw.length === 3 ? `0${digitsRaw}` : digitsRaw;
+  if (digits.length !== 4) return "";
+  return `${digits}hrs`;
+};
+
+const extractTimeDigits = (value) => {
+  const match = String(value || "").match(/(\d{4})hrs/);
+  return match ? match[1] : "";
+};
+
+const normalizePaxInput = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? String(parsed) : "";
+};
+
+const getExistingRemarkForCard = (card) => {
+  if (!card) return "";
+  if (card.hasAttribute("data-remarks")) {
+    return normalizeRemarkValue(card.dataset.remarks);
+  }
+  const existing = card.querySelector(".flight-remarks");
+  return existing ? normalizeRemarkValue(existing.textContent) : "";
+};
+
+const setTimeSpan = (timesEl, label, value) => {
+  if (!timesEl) return;
+  const spans = Array.from(timesEl.querySelectorAll("span"));
+  let target = spans.find((span) => span.textContent.trim().startsWith(label));
+  if (!target) {
+    target = document.createElement("span");
+    timesEl.appendChild(target);
+  }
+  target.textContent = `${label}: ${value || "--"}`;
+};
+
+const ensureFlightMeta = (metaEl) => {
+  if (!metaEl) return [];
+  const spans = Array.from(metaEl.querySelectorAll("span"));
+  while (spans.length < 2) {
+    const span = document.createElement("span");
+    metaEl.appendChild(span);
+    spans.push(span);
+  }
+  return spans;
+};
+
+const buildProgressRows = () => {
+  const usedTeams = new Set();
+  const rows = [];
+  for (let i = 0; i < 4; i += 1) {
+    let teamId = Math.floor(Math.random() * 24) + 1;
+    while (usedTeams.has(teamId)) {
+      teamId = Math.floor(Math.random() * 24) + 1;
+    }
+    usedTeams.add(teamId);
+    const pct = (Math.floor(Math.random() * 8) + 2) * 10;
+    rows.push(
+      `<div class="progress-row"><span>Team ${teamId}</span><span>${pct}%</span></div>`
+    );
+    rows.push(`<div class="progress-bar"><span style="width: ${pct}%"></span></div>`);
+  }
+  return rows.join("");
+};
+
+const createFlightCardElement = (data) => {
+  const card = document.createElement("article");
+  card.className = "card flight-card";
+  card.dataset.userCreated = "true";
+  card.dataset.remarks = data.remarks || "";
+  card.innerHTML = `
+    <div class="gate-banner">
+      <span class="gate-label">${formatGateLabel(data.gate)}</span>
+      <div class="gate-badges"></div>
+      <div class="gate-actions"></div>
+    </div>
+    <div class="fs-badge">FS: Unassigned</div>
+    <div class="flight-top">
+      <div class="flight-tag">${formatFlightTag(data.flightNo)}</div>
+      <div class="card-sub">TBD</div>
+      <div class="status on-time">On-Time</div>
+    </div>
+    <div class="flight-details">
+      <div class="flight-times">
+        <span>ETD: ${data.etd || "--"}</span>
+        <span>STD: ${data.std || "--"}</span>
+      </div>
+      <div class="flight-meta"><span>Type: --</span><span>Pax: ${
+        data.pax || "--"
+      }</span></div>
+    </div>
+    <div class="flight-progress">
+      <div class="card-sub">Assigned Teams</div>
+      ${buildProgressRows()}
+    </div>
+  `;
+  return card;
+};
+
+const setCardPressable = (card) => {
+  if (!card) return;
+  card.classList.add("is-pressable");
+  card.setAttribute("tabindex", "0");
+  card.setAttribute("role", "button");
+  const gateLabel = card.querySelector(".gate-label")?.textContent.trim();
+  const label = gateLabel ? `Assigned Teams ${gateLabel}` : "Assigned Teams";
+  card.setAttribute("aria-label", label);
+};
+
+const ensureEditButtons = () => {
+  const page = document.querySelector(".in-progress-page");
+  if (!page) return;
+  page.querySelectorAll(".flight-card").forEach((card) => {
+    const banner = card.querySelector(".gate-banner");
+    if (!banner) return;
+    const isUserCreated = card.dataset.userCreated === "true";
+    let actions = banner.querySelector(".gate-actions");
+    if (!actions) {
+      if (!isUserCreated) return;
+      actions = document.createElement("div");
+      actions.className = "gate-actions";
+      banner.appendChild(actions);
+    }
+    const existing = actions.querySelector(".edit-flight");
+    if (!isUserCreated) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (existing) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "edit-flight";
+    button.textContent = "Edit";
+    button.setAttribute("aria-label", "Edit Flight");
+    actions.appendChild(button);
+  });
+};
+
+const openFlightEditor = (card) => {
+  const panel = document.querySelector("#flight-editor-panel");
+  const title = document.querySelector("#flight-editor-title");
+  const save = document.querySelector("#flight-editor-save");
+  const gateInput = document.querySelector("#flight-gate");
+  const numberInput = document.querySelector("#flight-number");
+  const etdInput = document.querySelector("#flight-etd");
+  const stdInput = document.querySelector("#flight-std");
+  const paxInput = document.querySelector("#flight-pax");
+  const remarksInput = document.querySelector("#flight-remarks");
+  if (!panel || !title || !save || !gateInput || !numberInput || !etdInput || !stdInput || !paxInput || !remarksInput) {
+    return;
+  }
+
+  editingFlightCard = card || null;
+  title.textContent = editingFlightCard ? "Edit Flight" : "Create Flight";
+  save.textContent = editingFlightCard ? "Save Changes" : "Save Flight";
+
+  const gateLabel = editingFlightCard
+    ? editingFlightCard.querySelector(".gate-label")?.textContent || ""
+    : "";
+  gateInput.value = normalizeGateInput(gateLabel);
+
+  const tagText = editingFlightCard
+    ? editingFlightCard.querySelector(".flight-tag")?.textContent || ""
+    : "";
+  numberInput.value = normalizeFlightNumber(tagText);
+
+  const times = editingFlightCard?.querySelector(".flight-times");
+  const spans = times ? Array.from(times.querySelectorAll("span")) : [];
+  const etdSpan = spans.find((span) => span.textContent.trim().startsWith("ETD"));
+  const stdSpan = spans.find((span) => span.textContent.trim().startsWith("STD"));
+  etdInput.value = extractTimeDigits(etdSpan ? etdSpan.textContent : "");
+  stdInput.value = extractTimeDigits(stdSpan ? stdSpan.textContent : "");
+
+  const paxText = editingFlightCard
+    ? editingFlightCard.querySelector(".flight-meta span:last-child")?.textContent || ""
+    : "";
+  const paxMatch = paxText.match(/(\d+)/);
+  paxInput.value = paxMatch ? paxMatch[1] : "";
+
+  remarksInput.value = editingFlightCard ? getExistingRemarkForCard(editingFlightCard) : "";
+
+  panel.classList.remove("is-hidden");
+  gateInput.focus();
+};
+
+const closeFlightEditor = () => {
+  const panel = document.querySelector("#flight-editor-panel");
+  const gateInput = document.querySelector("#flight-gate");
+  const numberInput = document.querySelector("#flight-number");
+  const etdInput = document.querySelector("#flight-etd");
+  const stdInput = document.querySelector("#flight-std");
+  const paxInput = document.querySelector("#flight-pax");
+  const remarksInput = document.querySelector("#flight-remarks");
+  if (!panel || !gateInput || !numberInput || !etdInput || !stdInput || !paxInput || !remarksInput) {
+    return;
+  }
+
+  editingFlightCard = null;
+  gateInput.value = "";
+  numberInput.value = "";
+  etdInput.value = "";
+  stdInput.value = "";
+  paxInput.value = "";
+  remarksInput.value = "";
+  panel.classList.add("is-hidden");
+};
+
+const saveFlightEditor = () => {
+  const gateInput = document.querySelector("#flight-gate");
+  const numberInput = document.querySelector("#flight-number");
+  const etdInput = document.querySelector("#flight-etd");
+  const stdInput = document.querySelector("#flight-std");
+  const paxInput = document.querySelector("#flight-pax");
+  const remarksInput = document.querySelector("#flight-remarks");
+  if (!gateInput || !numberInput || !etdInput || !stdInput || !paxInput || !remarksInput) {
+    return;
+  }
+
+  if (!gateInput.reportValidity() || !numberInput.reportValidity()) return;
+
+  const etd = normalizeTimeInput(etdInput.value);
+  const std = normalizeTimeInput(stdInput.value) || etd;
+  const pax = normalizePaxInput(paxInput.value);
+  const remarks = normalizeRemarkValue(remarksInput.value);
+  const data = {
+    gate: gateInput.value,
+    flightNo: numberInput.value,
+    etd,
+    std,
+    pax,
+    remarks,
+  };
+
+  let card = editingFlightCard;
+  if (!card) {
+    card = createFlightCardElement(data);
+    const grid = document.querySelector(".in-progress-page .card-grid");
+    if (grid) grid.appendChild(card);
+  } else {
+    const gateLabel = card.querySelector(".gate-label");
+    if (gateLabel) gateLabel.textContent = formatGateLabel(data.gate);
+    const flightTag = card.querySelector(".flight-tag");
+    if (flightTag) flightTag.textContent = formatFlightTag(data.flightNo);
+    const times = card.querySelector(".flight-times");
+    if (times) {
+      setTimeSpan(times, "ETD", data.etd || "--");
+      setTimeSpan(times, "STD", data.std || "--");
+    }
+    const meta = card.querySelector(".flight-meta");
+    if (meta) {
+      const spans = ensureFlightMeta(meta);
+      if (spans[0]) spans[0].textContent = spans[0].textContent || "Type: --";
+      if (spans[1]) spans[1].textContent = `Pax: ${data.pax || "--"}`;
+    }
+  }
+
+  if (card) {
+    card.dataset.remarks = data.remarks || "";
+    setCardPressable(card);
+  }
+
+  ensureEditButtons();
+  applyRemarksToCards();
+  applyTeamOfficerCounts();
+  applyPatdownGateBanner();
+  applyAssignedTeamDocks();
+  applyProgressColors();
+  applyStatusGateColors();
+  movePastEtdToHistory();
+  updateGateCount();
+  updatePatdownCount();
+  updatePullCount();
+  updateGateChangeCount();
+  updateEnhancedCount();
+  updateRtGotForInProgress();
+  setTimeout(sortInProgressByRT, 0);
+  closeFlightEditor();
+};
+
+const setupFlightEditor = () => {
+  const trigger = document.querySelector("#create-flight");
+  const cancel = document.querySelector("#flight-editor-cancel");
+  const save = document.querySelector("#flight-editor-save");
+  const panel = document.querySelector("#flight-editor-panel");
+  if (!trigger || !cancel || !save || !panel) return;
+
+  ensureEditButtons();
+
+  trigger.addEventListener("click", () => openFlightEditor(null));
+  cancel.addEventListener("click", closeFlightEditor);
+  save.addEventListener("click", saveFlightEditor);
+
+  panel.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeFlightEditor();
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    const edit = event.target.closest(".edit-flight");
+    if (!edit) return;
+    const card = edit.closest(".flight-card");
+    if (!card) return;
+    openFlightEditor(card);
+  });
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   applyStatusGateColors();
+  applyPatdownGateBanner();
   updateScreeningTypes();
+  randomizeRemarksForCards();
+  applyRemarksToCards();
   updatePullCount();
   updateGateChangeCount();
   updateEnhancedCount();
@@ -238,6 +647,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateGateCount();
   applyAssignmentsToCards();
   applyTeamOfficerCounts();
+  applyAssignedTeamDocks();
   setupFsLeaderAssignment();
   enableAssignClose();
   enablePullFilter();
@@ -245,8 +655,13 @@ document.addEventListener("DOMContentLoaded", () => {
   enableEnhancedFilter();
   enablePatdownFilter();
   enableAssignedTeamsCards();
+  ensureEditButtons();
+  setupFlightEditor();
   enablePullRandom();
   enableTeamsToggle();
+  setupHistoryModal();
+  movePastEtdToHistory();
+  setInterval(movePastEtdToHistory, 60000);
 });
 
 const applyStatusGateColors = () => {
@@ -279,6 +694,19 @@ const enableTeamsToggle = () => {
     updateLabel();
   });
   updateLabel();
+};
+
+const setupHistoryModal = () => {
+  const trigger = document.querySelector("#toggle-history");
+  if (!trigger || !historyModal || !historyBackdrop || !historyClose) return;
+  trigger.addEventListener("click", openHistoryModal);
+  historyClose.addEventListener("click", closeHistoryModal);
+  historyBackdrop.addEventListener("click", closeHistoryModal);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && historyModal.classList.contains("is-visible")) {
+      closeHistoryModal();
+    }
+  });
 };
 
 const enableAssignClose = () => {
@@ -432,9 +860,25 @@ const modalTeamList = document.querySelector(".modal-team-list");
 const modalCloseList = document.querySelector(".modal-close-list");
 const modalTeamBlock = document.querySelector(".modal-team");
 const modalCloseBlock = document.querySelector(".modal-close-team");
+const modalPreviousBlock = document.querySelector(".modal-previous-flight");
+const modalPrevGate = modalPreviousBlock
+  ? modalPreviousBlock.querySelector(".modal-prev-gate")
+  : null;
+const modalPrevFlight = modalPreviousBlock
+  ? modalPreviousBlock.querySelector(".modal-prev-flight")
+  : null;
+const modalPrevEtd = modalPreviousBlock
+  ? modalPreviousBlock.querySelector(".modal-prev-etd")
+  : null;
 const modalSummary = document.querySelector(".modal-summary");
 const modalAction = modal ? modal.querySelector(".modal-action") : null;
 const modalTeamTitle = modalTeamBlock ? modalTeamBlock.querySelector("div") : null;
+const historyModal = document.querySelector(".history-modal");
+const historyBackdrop = document.querySelector(".history-backdrop");
+const historyClose = document.querySelector(".history-close");
+const historyModalGrid = historyModal
+  ? historyModal.querySelector(".history-modal-grid")
+  : null;
 const modalSummaryLabels = modalSummary
   ? Array.from(modalSummary.querySelectorAll("div span:first-child"))
   : [];
@@ -813,6 +1257,19 @@ const setModalGatePatdown = (isPatdown) => {
   if (gateBox) gateBox.classList.toggle("is-patdown", isActive);
 };
 
+const setModalPreviousFlight = (flight) => {
+  if (!modalPreviousBlock) return;
+  if (!flight) {
+    modalPreviousBlock.classList.add("is-hidden");
+    return;
+  }
+  const etdValue = flight.etd || flight.estimatedDepartureTime || "-";
+  if (modalPrevGate) modalPrevGate.textContent = flight.gate || "-";
+  if (modalPrevFlight) modalPrevFlight.textContent = flight.flightNo || "-";
+  if (modalPrevEtd) modalPrevEtd.textContent = etdValue;
+  modalPreviousBlock.classList.remove("is-hidden");
+};
+
 const renderModalTeamMembers = (members) => {
   if (!modalTeamList) return;
   modalTeamList.innerHTML = (members || [])
@@ -947,6 +1404,7 @@ const openModal = (data) => {
   if (modalCloseBlock) {
     modalCloseBlock.classList.toggle("is-hidden", closeOfficers.length === 0);
   }
+  setModalPreviousFlight(data.previousFlight || null);
   modalBackdrop.classList.add("is-visible");
   modal.classList.add("is-visible");
 };
@@ -994,11 +1452,12 @@ const openAssignedTeamsModal = (card) => {
       const picked = eligible[Math.floor(Math.random() * eligible.length)];
       withMainTag[picked.index].label = `${picked.team} - Main Team`;
     }
+    const dockMarkup = buildDockMeterMarkup(getDockCountForCard(card));
     modalTeamList.innerHTML = withMainTag.length
       ? withMainTag
           .map(
             (team) =>
-              `<li><span>${team.label}</span><span>${team.progress}</span></li>`
+              `<li><span>${team.label}</span>${dockMarkup}</li>`
           )
           .join("")
       : "<li><span>No assigned teams</span><span>-</span></li>";
@@ -1008,6 +1467,7 @@ const openAssignedTeamsModal = (card) => {
     modalTeamBlock.classList.remove("is-hidden");
   }
 
+  setModalPreviousFlight(null);
   modalBackdrop.classList.add("is-visible");
   modal.classList.add("is-visible");
 };
@@ -1123,6 +1583,68 @@ const updateScreeningTypes = () => {
   updateEnhancedCount();
 };
 
+const REMARK_OPTIONS = ["ASQ", "GOEM", "CIP", "VIP", "DM3999"];
+
+const getRandomRemark = () =>
+  REMARK_OPTIONS[Math.floor(Math.random() * REMARK_OPTIONS.length)];
+
+const normalizeRemarkValue = (value) => {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return "";
+  const withoutLabel = trimmed.replace(/^remarks\s*:\s*/i, "").trim();
+  const normalized = withoutLabel.toLowerCase();
+  if (normalized === "-" || normalized === "n/a" || normalized === "na" || normalized === "none") {
+    return "";
+  }
+  return withoutLabel;
+};
+
+const randomizeRemarksForCards = () => {
+  const cards = Array.from(document.querySelectorAll(".flight-card"));
+  const eligible = cards.filter((card) => !card.hasAttribute("data-remarks"));
+  if (!eligible.length) return;
+  const count = Math.max(1, Math.floor(eligible.length / 3));
+  const picks = eligible.sort(() => 0.5 - Math.random()).slice(0, count);
+  eligible.forEach((card) => {
+    card.dataset.remarks = picks.includes(card) ? getRandomRemark() : "";
+  });
+};
+
+const getRemarkForCard = (card) => {
+  if (!card) return "";
+  if (card.hasAttribute("data-remarks")) {
+    return normalizeRemarkValue(card.dataset.remarks);
+  }
+  const existing = card.querySelector(".flight-remarks");
+  if (existing) {
+    return normalizeRemarkValue(existing.textContent);
+  }
+  if (!card.dataset.remarks) {
+    card.dataset.remarks = getRandomRemark();
+  }
+  return normalizeRemarkValue(card.dataset.remarks);
+};
+
+const applyRemarksToCards = () => {
+  document.querySelectorAll(".flight-card").forEach((card) => {
+    const details = card.querySelector(".flight-details");
+    const meta = card.querySelector(".flight-meta");
+    if (!details || !meta) return;
+
+    const remark = getRemarkForCard(card);
+    const existing = details.querySelector(".flight-remarks");
+    if (!remark) {
+      if (existing) existing.remove();
+      return;
+    }
+
+    const remarksEl = existing || document.createElement("div");
+    remarksEl.className = "flight-remarks";
+    remarksEl.textContent = `Remarks: ${remark}`;
+    meta.insertAdjacentElement("afterend", remarksEl);
+  });
+};
+
 const extractFlightNumber = (text) => {
   if (!text) return "-";
   const normalized = text.replace(/\s+/g, " ").trim();
@@ -1134,6 +1656,76 @@ const getFlightNumberFromCard = (card) => {
   if (!card) return "-";
   const flightEl = card.querySelector(".flight-tag");
   return extractFlightNumber(flightEl ? flightEl.textContent : "");
+};
+
+const getTimeLabelFromCard = (card, label) => {
+  const times = card?.querySelector(".flight-times");
+  if (!times) return "-";
+  const span = Array.from(times.querySelectorAll("span")).find((item) =>
+    item.textContent.trim().startsWith(label)
+  );
+  if (!span) return "-";
+  return span.textContent.replace(`${label}:`, "").trim();
+};
+
+const renderHistoryCards = () => {
+  if (!historyModalGrid) return;
+  const historyGrid = document.querySelector("#history-grid");
+  if (!historyGrid) return;
+  const cards = Array.from(historyGrid.querySelectorAll(".flight-card"));
+  if (!cards.length) {
+    historyModalGrid.innerHTML = "<div class=\"history-empty\">No history yet</div>";
+    return;
+  }
+  historyModalGrid.innerHTML = "";
+  cards.forEach((card) => {
+    const clone = card.cloneNode(true);
+    clone.classList.remove("is-pressable");
+    clone.removeAttribute("tabindex");
+    clone.removeAttribute("role");
+    clone.removeAttribute("aria-label");
+    historyModalGrid.appendChild(clone);
+  });
+};
+
+const openHistoryModal = () => {
+  if (!historyModal || !historyBackdrop) return;
+  renderHistoryCards();
+  historyBackdrop.classList.add("is-visible");
+  historyModal.classList.add("is-visible");
+};
+
+const closeHistoryModal = () => {
+  if (!historyModal || !historyBackdrop) return;
+  historyBackdrop.classList.remove("is-visible");
+  historyModal.classList.remove("is-visible");
+};
+
+const getCurrentMinutes = () => {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+};
+
+const movePastEtdToHistory = () => {
+  const page = document.querySelector(".in-progress-page");
+  const historyGrid = document.querySelector("#history-grid");
+  if (!page || !historyGrid) return;
+  const mainGrid = page.querySelector(".card-grid:not(.history-grid)");
+  if (!mainGrid) return;
+  const nowMinutes = getCurrentMinutes();
+  Array.from(mainGrid.querySelectorAll(".flight-card")).forEach((card) => {
+    const etd = getTimeLabelFromCard(card, "ETD");
+    const etdMinutes = toMinutes(etd);
+    if (etdMinutes === null) return;
+    if (etdMinutes <= nowMinutes) {
+      card.classList.add("history-card");
+      historyGrid.appendChild(card);
+    }
+  });
+  updateGateCount();
+  if (historyModal && historyModal.classList.contains("is-visible")) {
+    renderHistoryCards();
+  }
 };
 
 const getEtdFromCard = (card) => {
@@ -1229,10 +1821,8 @@ document.addEventListener("click", (event) => {
   const gateText = banner ? banner.textContent.replace("PULL TEAM", "").trim() : "Gate";
   const flightEl = card ? card.querySelector(".flight-tag") : null;
   const flightText = flightEl ? flightEl.textContent.replace("✈", "").trim() : "-";
-  const etdEl = card ? card.querySelector(".flight-times span:first-child") : null;
-  const stdEl = card ? card.querySelector(".flight-times span:nth-child(2)") : null;
-  const etdText = etdEl ? etdEl.textContent.replace("ETD:", "").trim() : "-";
-  const stdText = stdEl ? stdEl.textContent.replace("STD:", "").trim() : "-";
+  const etdText = card ? getTimeLabelFromCard(card, "ETD") : "-";
+  const stdText = card ? getTimeLabelFromCard(card, "STD") : "-";
   const nextCard = card ? card.nextElementSibling : null;
   const nextGateEl = nextCard ? nextCard.querySelector(".gate-banner") : null;
   const nextGateText = nextGateEl ? nextGateEl.textContent.replace("PULL TEAM", "").trim() : "-";
@@ -1246,6 +1836,9 @@ document.addEventListener("click", (event) => {
   const closeOfficers = close ? pickCloseOfficers() : [];
   const isPatdown = pull ? Boolean(card && card.querySelector(".badge-patdown")) : false;
   const actionLabel = pull ? "Pull Team Completed" : "Gate Closed";
+  const previousFlight = pull
+    ? { gate: gateText, flightNo, etd: etdText }
+    : null;
 
   openModal({
     title: pull ? "Pull Team Officers" : "Close Gate Officers",
@@ -1260,6 +1853,7 @@ document.addEventListener("click", (event) => {
     isPatdown,
     actionLabel,
     teamMembers,
+    previousFlight,
     closeOfficers,
     teams,
   });

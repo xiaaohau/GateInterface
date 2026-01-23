@@ -25,6 +25,8 @@
               <div class="header-right">
                 <div class="header-actions">
                   <a class="pull-random" href="assign.html">Assign Gate</a>
+                  <button class="pull-random" type="button" id="create-flight">Create Flight</button>
+                  <button class="pull-random" type="button" id="toggle-history">History</button>
                   <button class="pull-random" type="button" id="assign-fs-leader">Assign FS Leader</button>
                   <button class="pull-random" type="button" id="pull-random">Random Pull Team</button>
                   <button class="pull-random" type="button" id="toggle-teams">Hide Teams</button>
@@ -38,6 +40,41 @@
                 <div class="assign-actions">
                   <button class="modal-action assign-submit" type="button" id="fs-leader-save">Assign Leader</button>
                   <button class="modal-action assign-view" type="button" id="fs-leader-cancel">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <div class="flight-editor-panel is-hidden" id="flight-editor-panel">
+              <div class="assign-panel assign-panel-full">
+                <div class="assign-title" id="flight-editor-title">Create Flight</div>
+                <div class="flight-editor-grid">
+                  <label class="flight-editor-field">
+                    <span class="assign-label">Gate</span>
+                    <input class="assign-select" type="text" id="flight-gate" placeholder="A7" required />
+                  </label>
+                  <label class="flight-editor-field">
+                    <span class="assign-label">Flight No</span>
+                    <input class="assign-select" type="text" id="flight-number" placeholder="CX 123" required />
+                  </label>
+                  <label class="flight-editor-field">
+                    <span class="assign-label">ETD</span>
+                    <input class="assign-select" type="text" id="flight-etd" placeholder="1112" inputmode="numeric" />
+                  </label>
+                  <label class="flight-editor-field">
+                    <span class="assign-label">STD</span>
+                    <input class="assign-select" type="text" id="flight-std" placeholder="1112" inputmode="numeric" />
+                  </label>
+                  <label class="flight-editor-field">
+                    <span class="assign-label">Pax</span>
+                    <input class="assign-select" type="number" id="flight-pax" min="0" step="1" placeholder="215" />
+                  </label>
+                  <label class="flight-editor-field span-full">
+                    <span class="assign-label">Remarks</span>
+                    <textarea class="assign-select" id="flight-remarks" rows="2" placeholder="ASQ"></textarea>
+                  </label>
+                </div>
+                <div class="assign-actions">
+                  <button class="modal-action assign-submit" type="button" id="flight-editor-save">Save Flight</button>
+                  <button class="modal-action assign-view" type="button" id="flight-editor-cancel">Cancel</button>
                 </div>
               </div>
             </div>
@@ -905,6 +942,7 @@
         </section>
       </div>
     </main>
+    <div class="history-grid is-hidden" id="history-grid"></div>
     <div class="modal-backdrop"></div>
     <div class="modal" role="dialog" aria-modal="true" aria-label="Action Details">
       <div class="modal-header">
@@ -936,6 +974,14 @@
           <div>Team Members</div>
           <ul class="modal-team-list"></ul>
         </div>
+        <div class="modal-team modal-previous-flight is-hidden">
+          <div>Previous Flight</div>
+          <ul class="modal-previous-list">
+            <li><span>Gate</span><span class="modal-prev-gate">-</span></li>
+            <li><span>Flight Number</span><span class="modal-prev-flight">-</span></li>
+            <li><span>Estimated Departure Time</span><span class="modal-prev-etd">-</span></li>
+          </ul>
+        </div>
         <div class="modal-team modal-close-team">
           <div>Close Gate Officers</div>
           <ul class="modal-close-list"></ul>
@@ -943,6 +989,16 @@
         <button class="modal-action" type="button">Gate Closed</button>
       </div>
     </div>
-    <script src="app.js?v=20250111"></script>
+    <div class="history-backdrop"></div>
+    <div class="history-modal in-progress-page control-room" role="dialog" aria-modal="true" aria-label="History">
+      <div class="history-header">
+        <h2>History</h2>
+        <button class="history-close" type="button">Close</button>
+      </div>
+      <div class="history-body">
+        <div class="history-modal-grid card-grid five-cols"></div>
+      </div>
+    </div>
+    <script src="app.js?v=20250116"></script>
   </body>
 </html>

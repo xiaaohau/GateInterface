@@ -796,6 +796,10 @@ body {
   border-color: rgba(255, 214, 0, 0.95);
 }
 
+.flight-card.patdown-gate .badge-patdown {
+  display: none;
+}
+
 .badge-enhanced {
   background: rgba(255, 107, 107, 0.2);
   color: #ff6b6b;
@@ -804,6 +808,18 @@ body {
 
 .in-progress-page .card-grid {
   gap: 20px;
+}
+
+.in-progress-page .history-section .section-title {
+  margin-top: 18px;
+}
+
+.in-progress-page .history-grid .flight-card {
+  opacity: 0.7;
+}
+
+.history-hidden .history-section {
+  display: none;
 }
 
 .in-progress-page .flight-card {
@@ -831,6 +847,24 @@ body {
   padding: 0;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.06);
+}
+
+.in-progress-page .edit-flight {
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f5f2ea;
+}
+
+.in-progress-page .edit-flight:hover {
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .in-progress-page .pull-team svg,
@@ -902,6 +936,52 @@ body {
 
 .in-progress-page .progress-bar {
   height: 8px;
+  display: none;
+}
+
+.in-progress-page .progress-row .dock-meter {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.in-progress-page .progress-row .progress-dock {
+  width: 10px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: inline-block;
+}
+
+.in-progress-page .progress-row .progress-dock.is-active {
+  background: rgba(53, 196, 119, 0.9);
+  border-color: rgba(53, 196, 119, 0.9);
+  box-shadow: 0 0 8px rgba(53, 196, 119, 0.5);
+}
+
+.modal-team-list .dock-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modal-team-list .progress-dock {
+  width: 12px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: inline-block;
+}
+
+.modal-team-list .progress-dock.is-active {
+  background: rgba(53, 196, 119, 0.9);
+  border-color: rgba(53, 196, 119, 0.9);
+  box-shadow: 0 0 8px rgba(53, 196, 119, 0.5);
 }
 
 .in-progress-page .flight-card.critical {
@@ -1124,6 +1204,13 @@ body {
   color: #b7b3aa;
 }
 
+.control-room .flight-details .flight-remarks {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c9c7c0;
+}
+
 .control-room .flight-progress {
   padding: 12px 16px 16px;
   background: #12151b;
@@ -1176,6 +1263,13 @@ body {
   background: linear-gradient(90deg, #ff9b1f, #ff6a00);
   color: #1a0f05;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.flight-card.patdown-gate .gate-banner {
+  background: linear-gradient(90deg, #ff2d2d, #b30000);
+  border-bottom-color: rgba(255, 45, 45, 0.95);
+  color: #fff4f4;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
 }
 
 .gate-change-alert {
@@ -1412,6 +1506,34 @@ body {
   color: #f5f2ea;
 }
 
+.flight-editor-panel {
+  margin-top: 12px;
+}
+
+.flight-editor-panel .assign-panel {
+  max-width: 680px;
+}
+
+.flight-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.flight-editor-field {
+  display: grid;
+  gap: 6px;
+}
+
+.flight-editor-field.span-full {
+  grid-column: 1 / -1;
+}
+
+.flight-editor-field textarea.assign-select {
+  min-height: 64px;
+  resize: vertical;
+}
+
 .assign-summary {
   margin-top: 16px;
   padding: 12px 14px;
@@ -1570,6 +1692,90 @@ body {
   transform: translate(-50%, -50%) scale(1);
 }
 
+.history-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 6, 8, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 20;
+}
+
+.history-modal {
+  position: fixed;
+  inset: auto 50% auto auto;
+  transform: translate(-50%, -50%) scale(0.96);
+  top: 50%;
+  left: 50%;
+  width: min(980px, 96vw);
+  background: #1e2228;
+  border: 1px solid #31343a;
+  border-radius: 14px;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 30;
+}
+
+.history-modal.is-visible,
+.history-backdrop.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.history-modal.is-visible {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.history-header h2 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.history-close {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f2ea;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.history-body {
+  max-height: 60vh;
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #1b1f26;
+  padding: 12px;
+}
+
+.history-modal .flight-card {
+  pointer-events: none;
+}
+
+.history-empty {
+  padding: 18px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -1701,7 +1907,8 @@ body {
   color: var(--muted);
 }
 
-.modal-team-list {
+.modal-team-list,
+.modal-previous-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1709,7 +1916,8 @@ body {
   gap: 6px;
 }
 
-.modal-team-list li {
+.modal-team-list li,
+.modal-previous-list li {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 6px;
@@ -1725,6 +1933,11 @@ body {
 .modal-team-list small {
   color: var(--muted);
   font-weight: 400;
+}
+
+.modal-previous-list span:first-child {
+  color: var(--muted);
+  font-weight: 500;
 }
 
 .is-hidden {
@@ -1932,6 +2145,13 @@ body {
   justify-content: space-between;
   font-size: 11px;
   letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #c9c7c0;
+}
+
+.flight-remarks {
+  font-size: 10px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #c9c7c0;
 }
