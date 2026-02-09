@@ -1034,6 +1034,81 @@ body {
   grid-template-columns: minmax(0, 1fr) 240px;
 }
 
+.os-page .layout-split.has-panel {
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+
+.os-page .os-side {
+  position: sticky;
+  top: 120px;
+  align-self: start;
+}
+
+.os-page .available-teams .card-grid {
+  grid-template-columns: 1fr;
+  gap: 12px;
+  max-height: calc(100vh - 240px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.os-page .available-teams .card {
+  padding: 10px 12px;
+  background: #ffffff;
+  color: #111111;
+  border-color: #d7d7d7;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.os-page .available-teams .card-title {
+  font-size: 20px;
+}
+
+.os-page .available-teams .card-sub {
+  font-size: 20px;
+  color: #111111;
+  text-transform: none;
+}
+
+.os-page .available-teams .card-meta {
+  font-size: 20px;
+  color: #111111;
+  justify-content: flex-start;
+}
+
+.os-page .available-teams .card-officers {
+  margin-top: 10px;
+  display: grid;
+  gap: 2px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111111;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #f8f9fb;
+}
+
+.os-page .available-teams .card-officers-title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4b5563;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 4px;
+}
+
+.os-page .available-teams .card-times {
+  font-size: 20px;
+  color: #111111;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  display: block;
+}
+
 .alert-panel {
   position: sticky;
   top: 120px;
@@ -1088,6 +1163,22 @@ body {
   color: #30ebff;
   border-color: rgba(48, 235, 255, 0.5);
   box-shadow: 0 0 16px rgba(48, 235, 255, 0.4);
+}
+
+@media (max-width: 1200px) {
+  .os-page .layout-split.has-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .os-page .os-side {
+    position: static;
+  }
+
+  .os-page .available-teams .card-grid {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
 }
 
 .control-room .flight-card {

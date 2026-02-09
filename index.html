@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="styles.css?v=20250107" />
   </head>
   <body>
-    <main class="page os-page">
+    <main class="page os-page full-screen">
       <div class="frame">
         <header class="topbar">
           <h1 class="page-title">PREBOARD LIVE UPDATE BOARD</h1>
@@ -28,9 +28,11 @@
           </div>
         </header>
 
-        <section class="section" id="unassigned-flights">
-          <h2 class="section-title">Critical Updates</h2>
-          <div class="card-grid">
+        <div class="os-layout layout-split has-panel">
+          <div class="os-main">
+            <section class="section" id="unassigned-flights">
+              <h2 class="section-title">Critical Updates</h2>
+              <div class="card-grid">
             <article class="card muted-card compact t3-card sandwich-card">
               <div class="card-header">
                 <div class="card-title-stack">
@@ -236,14 +238,14 @@
                 <span>STD 1720hrs</span>
               </div>
             </article>
-          </div>
-        </section>
+              </div>
+            </section>
 
-        <section class="section alert-section">
-          <h2 class="section-title">
-            Officer Task <span>- 30Mins Before RT Time Teams Not Accepting Task</span>
-          </h2>
-          <div class="card-grid">
+            <section class="section alert-section">
+              <h2 class="section-title">
+                Officer Task <span>- 30Mins Before RT Time Teams Not Accepting Task</span>
+              </h2>
+              <div class="card-grid">
             <article class="card compact">
               <div class="card-header">
                 <div class="card-title">Team 12 (3)</div>
@@ -320,12 +322,12 @@
                 <span>STD 1200hrs</span>
               </div>
             </article>
-          </div>
-        </section>
+              </div>
+            </section>
 
-        <section class="section">
-          <h2 class="section-title">In Progress Flight <span>- Current On-going Flight</span></h2>
-          <div class="card-grid">
+            <section class="section">
+              <h2 class="section-title">In Progress Flight <span>- Current On-going Flight</span></h2>
+              <div class="card-grid">
             <article class="card flight-card">
               <div class="gate-banner">Gate C18</div>
               <div class="flight-top">
@@ -520,86 +522,275 @@
                 <div class="progress-bar"><span style="width: 10%"></span></div>
               </div>
             </article>
+              </div>
+            </section>
           </div>
-        </section>
 
-        <section class="section">
-          <h2 class="section-title">
-            Available teams <span>- Next 3 Hours Teams Did Not Assign to Any Flight</span>
-          </h2>
-          <div class="card-grid">
-            <article class="card compact">
-              <div class="card-header">
-                <div class="card-title">Team 21 (3)</div>
-                <div class="card-sub">Gate C12</div>
+          <aside class="os-side">
+            <section class="section available-teams">
+              <h2 class="section-title">
+                Available teams <span>
+              </h2>
+              <div class="card-grid">
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 21 (3)</div>
+                    <div class="card-sub">Gate C12</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: PR 215</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 0705 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>Z. Malik - 3</div>
+                    <div>S. Nguyen - 2</div>
+                    <div>A. Cruz - 3</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 5 (2)</div>
+                    <div class="card-sub">Gate E6</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: JL 482</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 0815 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>U. Hayes - 1</div>
+                    <div>D. Carter - 1</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 16 (1)</div>
+                    <div class="card-sub">Gate B7</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: UA 739</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 0900 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>L. Morgan - 1</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 24 (3)</div>
+                    <div class="card-sub">Gate A12</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: DL 918</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 1010 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>L. Morgan - 1</div>
+                    <div>K. Rivera - 1</div>
+                    <div>U. Hayes - 3</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 11 (2)</div>
+                    <div class="card-sub">Gate D9</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: AA 156</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 1115 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>S. Nguyen - 3</div>
+                    <div>F. Reed - 1</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 8 (1)</div>
+                    <div class="card-sub">Gate B3</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: BA 402</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 1130 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>U. Hayes - 3</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 2 (3)</div>
+                    <div class="card-sub">Gate F6</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: AF 330</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 1145 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>M. Scott - 1</div>
+                    <div>I. Santos - 3</div>
+                    <div>J. Patel - 2</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 14 (2)</div>
+                    <div class="card-sub">Gate C5</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: EK 210</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 1200 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>B. Hughes - 3</div>
+                    <div>H. Foster - 1</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 19 (1)</div>
+                    <div class="card-sub">Gate A6</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: QF 512</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 1215 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>M. Lee - 2</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 3 (3)</div>
+                    <div class="card-sub">Gate E4</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: CX 244</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 1230 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>A. Cruz - 2</div>
+                    <div>J. Patel - 3</div>
+                    <div>R. Singh - 3</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 22 (2)</div>
+                    <div class="card-sub">Gate B10</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: LH 892</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 1245 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>L. Morgan - 1</div>
+                    <div>C. Bennett - 1</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 7 (1)</div>
+                    <div class="card-sub">Gate D3</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: JL 728</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 1300 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>Y. Park - 3</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 10 (3)</div>
+                    <div class="card-sub">Gate C1</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: UA 734</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 1315 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>A. Cruz - 1</div>
+                    <div>I. Santos - 2</div>
+                    <div>R. Singh - 3</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 13 (2)</div>
+                    <div class="card-sub">Gate A3</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: NZ 842</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 1330 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>Q. Price - 2</div>
+                    <div>Z. Malik - 3</div>
+                  </div>
+                </article>
+                <article class="card compact">
+                  <div class="card-header">
+                    <div class="card-title">Team 18 (1)</div>
+                    <div class="card-sub">Gate E1</div>
+                  </div>
+                  <div class="card-meta">
+                    <span>Last flight: KL 321</span>
+                  </div>
+                  <div class="card-times">
+                    <span>ETD: 1345 hrs</span>
+                  </div>
+                  <div class="card-officers">
+                    <div class="card-officers-title">Break</div>
+                    <div>Q. Price - 2</div>
+                  </div>
+                </article>
               </div>
-              <div class="card-meta">
-                <span>PR 215</span>
-                <span>DEL</span>
-              </div>
-              <div class="card-times">
-                <span>ETD 0705hrs</span>
-                <span>STD 0740hrs</span>
-              </div>
-            </article>
-            <article class="card compact">
-              <div class="card-header">
-                <div class="card-title">Team 5 (3)</div>
-                <div class="card-sub">Gate E6</div>
-              </div>
-              <div class="card-meta">
-                <span>JL 482</span>
-                <span>BOM</span>
-              </div>
-              <div class="card-times">
-                <span>ETD 0815hrs</span>
-                <span>STD 0830hrs</span>
-              </div>
-            </article>
-            <article class="card compact">
-              <div class="card-header">
-                <div class="card-title">Team 16 (3)</div>
-                <div class="card-sub">Gate B7</div>
-              </div>
-              <div class="card-meta">
-                <span>UA 739</span>
-                <span>MNL</span>
-              </div>
-              <div class="card-times">
-                <span>ETD 0900hrs</span>
-                <span>STD 0935hrs</span>
-              </div>
-            </article>
-            <article class="card compact">
-              <div class="card-header">
-                <div class="card-title">Team 24 (3)</div>
-                <div class="card-sub">Gate A12</div>
-              </div>
-              <div class="card-meta">
-                <span>DL 918</span>
-                <span>KIX</span>
-              </div>
-              <div class="card-times">
-                <span>ETD 1010hrs</span>
-                <span>STD 1030hrs</span>
-              </div>
-            </article>
-            <article class="card compact">
-              <div class="card-header">
-                <div class="card-title">Team 11 (3)</div>
-                <div class="card-sub">Gate D9</div>
-              </div>
-              <div class="card-meta">
-                <span>AA 156</span>
-                <span>SFO</span>
-              </div>
-              <div class="card-times">
-                <span>ETD 1115hrs</span>
-                <span>STD 1200hrs</span>
-              </div>
-            </article>
-          </div>
-        </section>
+            </section>
+          </aside>
+        </div>
       </div>
     </main>
     <script src="app.js?v=20250107"></script>
