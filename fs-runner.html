@@ -1,0 +1,443 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FS Runner View</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css?v=20250107" />
+  </head>
+  <body>
+    <main class="page runner-page full-screen">
+      <div class="runner-shell">
+        <header class="runner-dashboard-header">
+          <div class="runner-dashboard-left">
+            <div class="runner-dashboard-title">FLIGHT DISPLAY</div>
+            <div class="runner-dashboard-updated">Updated: 22 Jan 2026 09:40 AM</div>
+          </div>
+          <a class="runner-back" href="index.html">Back to OS Page</a>
+        </header>
+
+        <div class="runner-device-grid">
+          <div class="runner-device-wrap">
+            <div class="runner-device-label">PHONE ID 1.</div>
+            <section class="runner-device" aria-label="Critical Flight Monitor Phone 1">
+              <div class="runner-screen">
+                <header class="runner-top">
+                  <span class="runner-title">CRITICAL FLIGHT MONITOR</span>
+                  <span class="runner-time">17:18</span>
+                </header>
+
+                <div class="runner-tabs" role="tablist" aria-label="Flight status">
+                  <button
+                    class="runner-tab is-active"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    data-status="assigned"
+                  >
+                    ASSIGNED
+                  </button>
+                  <button
+                    class="runner-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    data-status="completed"
+                  >
+                    COMPLETED
+                  </button>
+                </div>
+
+                <div class="runner-list">
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">09:46</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">C3</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">CX 123</div>
+                      <div class="runner-route">Hong Kong (HKG)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">11:00</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">B7</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">JL 124</div>
+                      <div class="runner-route">Tokyo (NRT)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">11:05</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">A7</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">MH 121</div>
+                      <div class="runner-route">Kuala Lumpur (KUL)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">13:06</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">A2</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">SQ 120</div>
+                      <div class="runner-route">Singapore (SIN)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card is-change" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">13:28</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate-alert change">CHANGE</div>
+                      <div class="runner-gate-change">
+                        <span class="from">A12</span>
+                        <span class="arrow">-></span>
+                        <span class="to">B1</span>
+                      </div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">TG 122</div>
+                      <div class="runner-route">Bangkok (BKK)</div>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="runner-device-wrap">
+            <div class="runner-device-label">PHONE ID 2.</div>
+            <section class="runner-device" aria-label="Critical Flight Monitor Phone 2">
+              <div class="runner-screen">
+                <header class="runner-top">
+                  <span class="runner-title">CRITICAL FLIGHT MONITOR</span>
+                  <span class="runner-time">17:18</span>
+                </header>
+
+                <div class="runner-tabs" role="tablist" aria-label="Flight status">
+                  <button
+                    class="runner-tab is-active"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    data-status="assigned"
+                  >
+                    ASSIGNED
+                  </button>
+                  <button
+                    class="runner-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    data-status="completed"
+                  >
+                    COMPLETED
+                  </button>
+                </div>
+
+                <div class="runner-list">
+                  <article class="runner-card is-late" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">12:16</div>
+                      <div class="runner-gate-alert late">LATE NOW</div>
+                      <div class="runner-gate">A1</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">SQ 120</div>
+                      <div class="runner-route">Singapore (SIN)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">10:20</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">A8</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">TG 122</div>
+                      <div class="runner-route">Bangkok (BKK)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">11:27</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">A12</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">CX 123</div>
+                      <div class="runner-route">Hong Kong (HKG)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">13:43</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">B7</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">MH 121</div>
+                      <div class="runner-route">Kuala Lumpur (KUL)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">13:46</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">A3</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">JL 124</div>
+                      <div class="runner-route">Tokyo (NRT)</div>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="runner-device-wrap">
+            <div class="runner-device-label">PHONE ID 3.</div>
+            <section class="runner-device" aria-label="Critical Flight Monitor Phone 3">
+              <div class="runner-screen">
+                <header class="runner-top">
+                  <span class="runner-title">CRITICAL FLIGHT MONITOR</span>
+                  <span class="runner-time">17:18</span>
+                </header>
+
+                <div class="runner-tabs" role="tablist" aria-label="Flight status">
+                  <button
+                    class="runner-tab is-active"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    data-status="assigned"
+                  >
+                    ASSIGNED
+                  </button>
+                  <button
+                    class="runner-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    data-status="completed"
+                  >
+                    COMPLETED
+                  </button>
+                </div>
+
+                <div class="runner-list">
+                  <article class="runner-card is-task" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">11:37</div>
+                      <div class="runner-gate-alert task">T TASK</div>
+                      <div class="runner-gate">A1</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">SQ 120</div>
+                      <div class="runner-route">Singapore (SIN)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">09:09</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">C3</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">TG 122</div>
+                      <div class="runner-route">Bangkok (BKK)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">11:46</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">B1</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">JL 124</div>
+                      <div class="runner-route">Tokyo (NRT)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">12:25</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">A2</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">MH 121</div>
+                      <div class="runner-route">Kuala Lumpur (KUL)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">12:31</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">A7</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">CX 123</div>
+                      <div class="runner-route">Hong Kong (HKG)</div>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="runner-device-wrap">
+            <div class="runner-device-label">PHONE ID 4.</div>
+            <section class="runner-device" aria-label="Critical Flight Monitor Phone 4">
+              <div class="runner-screen">
+                <header class="runner-top">
+                  <span class="runner-title">CRITICAL FLIGHT MONITOR</span>
+                  <span class="runner-time">17:18</span>
+                </header>
+
+                <div class="runner-tabs" role="tablist" aria-label="Flight status">
+                  <button
+                    class="runner-tab is-active"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    data-status="assigned"
+                  >
+                    ASSIGNED
+                  </button>
+                  <button
+                    class="runner-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    data-status="completed"
+                  >
+                    COMPLETED
+                  </button>
+                </div>
+
+                <div class="runner-list">
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">09:04</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">A3</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">MH 121</div>
+                      <div class="runner-route">Kuala Lumpur (KUL)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">10:58</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">A7</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">SQ 120</div>
+                      <div class="runner-route">Singapore (SIN)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card is-change" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">10:58</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate-alert pier">AND PIER</div>
+                      <div class="runner-gate-change">
+                        <span class="from">A4</span>
+                        <span class="arrow">-></span>
+                        <span class="to">B1</span>
+                      </div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">TG 122</div>
+                      <div class="runner-route">Bangkok (BKK)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">13:02</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">A1</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">CX 123</div>
+                      <div class="runner-route">Hong Kong (HKG)</div>
+                    </div>
+                  </article>
+
+                  <article class="runner-card" data-status="assigned">
+                    <div class="runner-left">
+                      <div class="runner-time-block">13:46</div>
+                      <div class="runner-gate-label">GATE</div>
+                      <div class="runner-gate">B7</div>
+                    </div>
+                    <div class="runner-main">
+                      <div class="runner-flight">JL 124</div>
+                      <div class="runner-route">Tokyo (NRT)</div>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+      <div class="runner-modal-backdrop" id="runner-modal-backdrop" aria-hidden="true"></div>
+      <div class="runner-modal" id="runner-modal" role="dialog" aria-modal="true" aria-labelledby="runner-modal-title">
+        <div class="runner-modal-header">
+          <h2 id="runner-modal-title">Flight Details</h2>
+          <button type="button" class="runner-modal-close" id="runner-modal-close">Close</button>
+        </div>
+        <div class="runner-modal-body">
+          <div class="runner-modal-row"><span>Time</span><span id="runner-modal-time">--</span></div>
+          <div class="runner-modal-row"><span>Gate</span><span id="runner-modal-gate">--</span></div>
+          <div class="runner-modal-row"><span>Flight</span><span id="runner-modal-flight">--</span></div>
+          <div class="runner-modal-row"><span>Route</span><span id="runner-modal-route">--</span></div>
+          <div class="runner-modal-row"><span>Status</span><span id="runner-modal-status">--</span></div>
+          <div class="runner-modal-row"><span>Change</span><span id="runner-modal-change">--</span></div>
+          <label class="runner-modal-remarks">
+            <span>Remarks</span>
+            <textarea id="runner-modal-remarks" rows="3" placeholder="Type remarks..."></textarea>
+          </label>
+          <div class="runner-modal-actions">
+            <button type="button" class="runner-modal-save" id="runner-modal-save">Save Remarks</button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script src="runner.js"></script>
+  </body>
+</html>
