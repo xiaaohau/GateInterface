@@ -20,7 +20,7 @@
             <div class="runner-dashboard-title">FLIGHT DISPLAY</div>
             <div class="runner-dashboard-updated">Updated: 22 Jan 2026 09:40 AM</div>
           </div>
-          <a class="runner-back" href="index.html">Back to OS Page</a>
+          <a class="runner-back" href="in-progress.html">Click to FS Page</a>
         </header>
 
         <div class="runner-device-grid">
@@ -414,27 +414,181 @@
             </section>
           </div>
         </div>
+        <div class="runner-mobile-combined" id="runner-mobile-combined">
+          <div class="runner-device-wrap">
+            <div class="runner-device-label">MOBILE VIEW</div>
+            <section class="runner-device runner-mobile-device" aria-label="Critical Flight Monitor Mobile">
+              <div class="runner-screen">
+                <header class="runner-top">
+                  <span class="runner-title">CRITICAL FLIGHT MONITOR</span>
+                  <span class="runner-time">17:18</span>
+                </header>
+                <div class="runner-tabs" role="tablist" aria-label="Flight status">
+                  <button
+                    class="runner-tab is-active"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    data-status="assigned"
+                  >
+                    ASSIGNED
+                  </button>
+                  <button
+                    class="runner-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    data-status="completed"
+                  >
+                    COMPLETED
+                  </button>
+                </div>
+                <div class="runner-list" id="runner-mobile-list"></div>
+              </div>
+            </section>
+          </div>
+        </div>
       </div>
       <div class="runner-modal-backdrop" id="runner-modal-backdrop" aria-hidden="true"></div>
       <div class="runner-modal" id="runner-modal" role="dialog" aria-modal="true" aria-labelledby="runner-modal-title">
         <div class="runner-modal-header">
-          <h2 id="runner-modal-title">Flight Details</h2>
+          <div class="runner-modal-header-main">
+            <h2 id="runner-modal-title">Flight Details</h2>
+            <div class="runner-modal-team-actions" role="group" aria-label="Assigned teams actions">
+              <button type="button" class="runner-team-action runner-team-action-pull">Pull Team</button>
+              <button type="button" class="runner-team-action runner-team-action-close">Close Gate</button>
+            </div>
+          </div>
           <button type="button" class="runner-modal-close" id="runner-modal-close">Close</button>
         </div>
         <div class="runner-modal-body">
-          <div class="runner-modal-row"><span>Time</span><span id="runner-modal-time">--</span></div>
-          <div class="runner-modal-row"><span>Gate</span><span id="runner-modal-gate">--</span></div>
-          <div class="runner-modal-row"><span>Flight</span><span id="runner-modal-flight">--</span></div>
-          <div class="runner-modal-row"><span>Route</span><span id="runner-modal-route">--</span></div>
-          <div class="runner-modal-row"><span>Status</span><span id="runner-modal-status">--</span></div>
-          <div class="runner-modal-row"><span>Change</span><span id="runner-modal-change">--</span></div>
-          <label class="runner-modal-remarks">
-            <span>Remarks</span>
-            <textarea id="runner-modal-remarks" rows="3" placeholder="Type remarks..."></textarea>
-          </label>
-          <div class="runner-modal-actions">
-            <button type="button" class="runner-modal-save" id="runner-modal-save">Save Remarks</button>
+          <div class="runner-modal-info-grid">
+            <section class="runner-modal-info-card" aria-label="Gate">
+              <div class="runner-modal-label">Gate</div>
+              <div class="runner-modal-value" id="runner-modal-gate">--</div>
+            </section>
+            <section class="runner-modal-info-card" aria-label="Reporting time">
+              <div class="runner-modal-label">Reporting Time</div>
+              <div class="runner-modal-value" id="runner-modal-reporting">--</div>
+            </section>
+            <section class="runner-modal-info-card" aria-label="Flight number">
+              <div class="runner-modal-label">Flight Number</div>
+              <div class="runner-modal-value" id="runner-modal-flight">--</div>
+            </section>
+            <section class="runner-modal-info-card" aria-label="Gate opening time">
+              <div class="runner-modal-label">Gate Opening Time</div>
+              <div class="runner-modal-value" id="runner-modal-opening">--</div>
+            </section>
           </div>
+
+          <div class="runner-modal-team-panel">
+            <h3 class="runner-modal-team-title">Assigned Teams</h3>
+            <ul class="runner-modal-team-list" id="runner-modal-team-list">
+              <li class="runner-team-row">
+                <span class="runner-team-name">Team M (3)</span>
+                <div class="runner-team-signal">
+                  <span class="is-on"></span><span class="is-on"></span><span class="is-on"></span><span></span>
+                </div>
+              </li>
+              <li class="runner-team-row">
+                <span class="runner-team-name">Team 3 (2)</span>
+                <div class="runner-team-signal">
+                  <span class="is-on"></span><span class="is-on"></span><span class="is-on"></span><span></span>
+                </div>
+              </li>
+              <li class="runner-team-row">
+                <span class="runner-team-name">Team 8 (3) - Main Team</span>
+                <div class="runner-team-signal">
+                  <span class="is-on"></span><span class="is-on"></span><span class="is-on"></span><span></span>
+                </div>
+              </li>
+              <li class="runner-team-row">
+                <span class="runner-team-name">Team 14 (3)</span>
+                <div class="runner-team-signal">
+                  <span class="is-on"></span><span class="is-on"></span><span class="is-on"></span><span></span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <section class="runner-modal-remarks-panel" aria-label="Remarks">
+            <div class="runner-modal-remarks-title">Remarks</div>
+            <textarea
+              class="runner-modal-remarks-input"
+              id="runner-modal-remarks"
+              rows="4"
+              placeholder="Enter incident details..."
+            ></textarea>
+            <div class="runner-modal-save-row">
+              <button
+                type="button"
+                class="runner-modal-save runner-team-action"
+                id="runner-modal-save"
+              >
+                Save Remarks
+              </button>
+            </div>
+          </section>
+          <div class="runner-modal-complete-row">
+            <button
+              type="button"
+              class="runner-modal-complete runner-action-action"
+              id="runner-modal-complete"
+            >
+              Complete
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="runner-action-modal-backdrop" id="runner-action-modal-backdrop" aria-hidden="true"></div>
+      <div
+        class="runner-action-modal"
+        id="runner-action-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="runner-action-modal-title"
+      >
+        <div class="runner-action-modal-header">
+          <h2 id="runner-action-modal-title">Action Details</h2>
+          <button class="runner-action-modal-close" id="runner-action-modal-close" type="button">Close</button>
+        </div>
+        <div class="runner-action-modal-body">
+          <div class="runner-action-team-tabs is-hidden" role="tablist" aria-label="Team selection"></div>
+          <div class="runner-action-summary">
+            <div>
+              <span>Gate</span>
+              <span id="runner-action-gate">Gate --</span>
+            </div>
+            <div>
+              <span>Reporting Time</span>
+              <span id="runner-action-reporting">--</span>
+            </div>
+            <div>
+              <span>Flight Number</span>
+              <span id="runner-action-flight">--</span>
+            </div>
+            <div>
+              <span>Gate Opening Time</span>
+              <span id="runner-action-opening">--</span>
+            </div>
+          </div>
+          <div class="runner-action-team" id="runner-action-team">
+            <div id="runner-action-team-title">Team Members</div>
+            <ul class="runner-action-team-list" id="runner-action-team-list"></ul>
+          </div>
+          <div class="runner-action-team runner-action-previous is-hidden" id="runner-action-previous">
+            <div>Previous Flight</div>
+            <ul class="runner-action-previous-list">
+              <li><span>Gate</span><span id="runner-action-prev-gate">-</span></li>
+              <li><span>Flight Number</span><span id="runner-action-prev-flight">-</span></li>
+              <li><span>Estimated Departure Time</span><span id="runner-action-prev-etd">-</span></li>
+            </ul>
+          </div>
+          <div class="runner-action-team runner-action-close-team is-hidden" id="runner-action-close-team">
+            <div>Close Gate Officers</div>
+            <ul class="runner-action-close-list" id="runner-action-close-list"></ul>
+          </div>
+          <button class="runner-action-action" id="runner-action-action" type="button">Gate Closed</button>
         </div>
       </div>
     </main>
