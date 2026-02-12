@@ -63,6 +63,69 @@ const getInProgressCards = () => {
 const getVisibleInProgressCards = () =>
   getInProgressCards().filter((card) => !card.classList.contains("is-hidden"));
 
+const PULL_TEAM_ICON = `
+  <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="9" cy="6.5" r="2"/>
+    <path d="M7 12l2.8-2 2.2 2 2.2-1.1"/>
+    <path d="M6 18l2-4 2.2 1.4L12 20"/>
+    <path d="M12.5 12.5l2.5 1.5 1.5 3"/>
+    <path d="M15.5 8.5h6"/>
+    <path d="M19 6l2.5 2.5L19 11"/>
+  </svg>
+`;
+
+const CLOSE_GATE_ICON = `
+  <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 4h12v16H6z"/>
+    <path d="M10 4v16"/>
+    <circle cx="14.5" cy="12" r="0.9"/>
+  </svg>
+`;
+
+const getFsAlertCandidateCards = () => {
+  const visibleCards = getVisibleInProgressCards();
+  if (visibleCards.length) return visibleCards;
+  return getInProgressCards();
+};
+
+const pickPreferredAlertCard = (cards, predicate) => {
+  if (!Array.isArray(cards) || cards.length === 0) return null;
+  if (typeof predicate === "function") {
+    const preferred = cards.find((card) => predicate(card));
+    if (preferred) return preferred;
+  }
+  return cards[Math.floor(Math.random() * cards.length)] || null;
+};
+
+const ensureGateBadgesContainer = (card) => {
+  if (!card) return null;
+  const banner = card.querySelector(".gate-banner");
+  if (!banner) return null;
+  let badges = banner.querySelector(".gate-badges");
+  if (badges) return badges;
+  badges = document.createElement("div");
+  badges.className = "gate-badges";
+  const actions = banner.querySelector(".gate-actions");
+  if (actions) {
+    banner.insertBefore(badges, actions);
+  } else {
+    banner.appendChild(badges);
+  }
+  return badges;
+};
+
+const ensureGateActionsContainer = (card) => {
+  if (!card) return null;
+  const banner = card.querySelector(".gate-banner");
+  if (!banner) return null;
+  let actions = banner.querySelector(".gate-actions");
+  if (actions) return actions;
+  actions = document.createElement("div");
+  actions.className = "gate-actions";
+  banner.appendChild(actions);
+  return actions;
+};
+
 const updatePullCount = () => {
   const countEl = document.querySelector("#pull-count");
   if (!countEl) return;
@@ -92,10 +155,7 @@ const updateEnhancedCount = () => {
 
 const isPatdownCard = (card) => {
   if (!card) return false;
-  if (card.classList.contains("critical")) return false;
-  if (card.classList.contains("status-delayed")) return true;
-  const statusEl = card.querySelector(".status");
-  return Boolean(statusEl && statusEl.classList.contains("delayed"));
+  return Boolean(card.querySelector(".badge-patdown"));
 };
 
 const updatePatdownCount = () => {
@@ -129,6 +189,164 @@ const applyPatdownGateBanner = () => {
     const hasPatdownBadge = Boolean(card.querySelector(".badge-patdown"));
     card.classList.toggle("patdown-gate", hasPatdownBadge);
   });
+};
+
+const clearGateChangeField = (card) => {
+  if (!card) return;
+  const gateLabel = card.querySelector(".gate-label");
+  card.querySelectorAll(".gate-change-field").forEach((el) => el.remove());
+  const currentGateCode = getFlightCardGateCode(card);
+  if (gateLabel && currentGateCode) {
+    gateLabel.textContent = `Gate ${currentGateCode}`;
+  }
+};
+
+const getPreviousGateCodeForChange = (newGateCode, preferredOldCode = "") => {
+  const normalizedNew = normalizeAllowedGateCode(newGateCode);
+  const normalizedPreferred = normalizeAllowedGateCode(preferredOldCode);
+  if (normalizedPreferred && normalizedPreferred !== normalizedNew) {
+    return normalizedPreferred;
+  }
+  const index = ALLOWED_GATE_CODES.indexOf(normalizedNew);
+  if (index === -1) return "";
+  if (index > 0) return ALLOWED_GATE_CODES[index - 1];
+  return ALLOWED_GATE_CODES[index + 1] || "";
+};
+
+const renderGateChangeField = (card, oldGateCode, newGateCode) => {
+  if (!card) return;
+  clearGateChangeField(card);
+  const oldCode = normalizeAllowedGateCode(oldGateCode);
+  const newCode = normalizeAllowedGateCode(newGateCode);
+  if (!oldCode || !newCode || oldCode === newCode) return;
+  const gateLabel = card.querySelector(".gate-label");
+  if (!gateLabel) return;
+  card.dataset.currentGateCode = newCode;
+  gateLabel.innerHTML = `Gate <span class="gate-change-field"><span class="old">${oldCode}</span><span class="arrow">&rarr;</span><span class="new">${newCode}</span></span>`;
+};
+
+const applySingleGateChangeAlert = () => {
+  const cards = getInProgressCards();
+  if (!cards.length) {
+    updateGateChangeCount();
+    return;
+  }
+  const candidates = getFsAlertCandidateCards();
+  const target = pickPreferredAlertCard(
+    candidates,
+    (card) =>
+      card.dataset.gateChangeAlert === "true" || card.classList.contains("gate-changed")
+  );
+  const targetGateCode = target ? getFlightCardGateCode(target) : "";
+  const oldGateCode = target
+    ? getPreviousGateCodeForChange(targetGateCode, target.dataset.gateChangeOldGate || "")
+    : "";
+
+  cards.forEach((card) => {
+    card.classList.remove("gate-changed");
+    card.dataset.gateChangeAlert = "false";
+    card.dataset.gateChangeOldGate = "";
+    const gateLabel = card.querySelector(".gate-label");
+    if (gateLabel) gateLabel.classList.remove("gate-change-alert");
+    clearGateChangeField(card);
+  });
+
+  if (target) {
+    target.classList.add("gate-changed");
+    target.dataset.gateChangeAlert = "true";
+    if (oldGateCode) {
+      target.dataset.gateChangeOldGate = oldGateCode;
+    }
+    const gateLabel = target.querySelector(".gate-label");
+    if (gateLabel) {
+      gateLabel.classList.add("gate-change-alert");
+    }
+    renderGateChangeField(target, oldGateCode, targetGateCode);
+  }
+
+  updateGateChangeCount();
+};
+
+const applySinglePatdownAlert = () => {
+  const cards = getInProgressCards();
+  if (!cards.length) {
+    updatePatdownCount();
+    return;
+  }
+  const candidates = getFsAlertCandidateCards();
+  const target = pickPreferredAlertCard(
+    candidates,
+    (card) =>
+      card.dataset.patdownAlert === "true" || Boolean(card.querySelector(".badge-patdown"))
+  );
+
+  cards.forEach((card) => {
+    card.dataset.patdownAlert = "false";
+    card.querySelectorAll(".badge-patdown").forEach((badge) => badge.remove());
+    card.classList.remove("has-patdown");
+  });
+
+  if (target) {
+    const badges = ensureGateBadgesContainer(target);
+    if (badges) {
+      const badge = document.createElement("span");
+      badge.className = "badge badge-patdown";
+      badge.textContent = "Patdown";
+      badges.appendChild(badge);
+      target.dataset.patdownAlert = "true";
+      target.classList.add("has-patdown");
+    }
+  }
+
+  applyPatdownGateBanner();
+  updatePatdownCount();
+};
+
+const applySinglePullAlert = () => {
+  const cards = getInProgressCards();
+  if (!cards.length) {
+    updatePullCount();
+    return;
+  }
+
+  const candidates = getFsAlertCandidateCards();
+  const target = pickPreferredAlertCard(
+    candidates,
+    (card) => card.dataset.pullAlert === "true" || Boolean(card.querySelector(".pull-team"))
+  );
+
+  cards.forEach((card) => {
+    card.dataset.pullAlert = "false";
+    card.querySelectorAll(".pull-team, .close-gate").forEach((badge) => badge.remove());
+    card.classList.remove("has-pull");
+  });
+
+  if (target) {
+    const actions = ensureGateActionsContainer(target);
+    if (actions) {
+      const pull = document.createElement("button");
+      pull.type = "button";
+      pull.className = "pull-team";
+      pull.setAttribute("aria-label", "Pull Team");
+      pull.setAttribute("data-label", "Pull Team");
+      pull.innerHTML = PULL_TEAM_ICON;
+
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "close-gate";
+      close.setAttribute("aria-label", "Close Gate");
+      close.setAttribute("data-label", "Close Gate");
+      close.innerHTML = CLOSE_GATE_ICON;
+
+      actions.appendChild(pull);
+      actions.appendChild(close);
+      target.classList.add("has-pull");
+      target.dataset.pullAlert = "true";
+    }
+  }
+
+  updatePullCount();
+  syncLiveFlightsFromPage();
 };
 
 const DOCKS_PER_ROW = 4;
@@ -176,6 +394,113 @@ const applyAssignedTeamDocks = () => {
         indicator.appendChild(dock);
       }
     });
+  });
+};
+
+const ZONE_A_GATES = Array.from({ length: 21 }, (_, idx) => `A${idx + 1}`);
+const ZONE_B_GATES = Array.from({ length: 10 }, (_, idx) => `B${idx + 1}`);
+const ALLOWED_GATE_CODES = [...ZONE_A_GATES, ...ZONE_B_GATES];
+const GATE_CONFLICT_WINDOW_MINUTES = 90;
+const RT_FORWARD_WINDOW_MINUTES = 90;
+
+const normalizeAllowedGateCode = (value) => {
+  const normalized = String(value || "")
+    .toUpperCase()
+    .replace(/^GATE\s*/i, "")
+    .replace(/\s+/g, "")
+    .trim();
+  const match = normalized.match(/^([AB])(\d{1,2})$/);
+  if (!match) return "";
+  const zone = match[1];
+  const number = Number(match[2]);
+  if (zone === "A" && number >= 1 && number <= 21) return `A${number}`;
+  if (zone === "B" && number >= 1 && number <= 10) return `B${number}`;
+  return "";
+};
+
+const getCircularMinutesDiff = (first, second) => {
+  if (!Number.isFinite(first) || !Number.isFinite(second)) return Number.MAX_SAFE_INTEGER;
+  const diff = Math.abs(first - second);
+  return Math.min(diff, 1440 - diff);
+};
+
+const getFlightCardGateCode = (card) => {
+  if (!card) return "";
+  const stored = normalizeAllowedGateCode(card.dataset.currentGateCode || "");
+  if (stored) return stored;
+  const labelText = String(card.querySelector(".gate-label")?.textContent || "");
+  const matches = labelText.toUpperCase().match(/[AB]\s*\d{1,2}/g);
+  const fallback = matches && matches.length ? matches[matches.length - 1] : labelText;
+  const normalized = normalizeAllowedGateCode(fallback);
+  if (normalized) {
+    card.dataset.currentGateCode = normalized;
+  }
+  return normalized;
+};
+
+const setFlightCardGateCode = (card, gateCode) => {
+  if (!card || !gateCode) return;
+  const gateLabel = card.querySelector(".gate-label");
+  card.dataset.currentGateCode = gateCode;
+  if (gateLabel) {
+    gateLabel.textContent = `Gate ${gateCode}`;
+  }
+  const label = gateLabel ? gateLabel.textContent.trim() : `Gate ${gateCode}`;
+  card.setAttribute("aria-label", `Assigned Teams ${label}`);
+};
+
+const hasGateConflictInWindow = (allocations, gateCode, etdMinutes) =>
+  allocations.some(
+    (entry) =>
+      entry.gateCode === gateCode &&
+      getCircularMinutesDiff(entry.etdMinutes, etdMinutes) <=
+        GATE_CONFLICT_WINDOW_MINUTES
+  );
+
+const enforceInProgressGatePolicy = () => {
+  const page = document.querySelector(".in-progress-page");
+  if (!page) return;
+  const cards = getInProgressCards();
+  if (!cards.length) return;
+
+  const allocations = [];
+  const ordered = cards
+    .map((card, index) => ({
+      card,
+      index,
+      gateCode: getFlightCardGateCode(card),
+      etdMinutes: toMinutes(getTimeLabelFromCard(card, "ETD")),
+    }))
+    .sort((left, right) => {
+      const leftMinutes = Number.isFinite(left.etdMinutes)
+        ? left.etdMinutes
+        : Number.MAX_SAFE_INTEGER;
+      const rightMinutes = Number.isFinite(right.etdMinutes)
+        ? right.etdMinutes
+        : Number.MAX_SAFE_INTEGER;
+      if (leftMinutes !== rightMinutes) return leftMinutes - rightMinutes;
+      return left.index - right.index;
+    });
+
+  ordered.forEach((entry, index) => {
+    const candidates = Array.from(
+      new Set([entry.gateCode, ...ALLOWED_GATE_CODES].filter(Boolean))
+    );
+
+    let selected = candidates.find((candidate) => {
+      if (!ALLOWED_GATE_CODES.includes(candidate)) return false;
+      if (!Number.isFinite(entry.etdMinutes)) {
+        return !allocations.some((item) => item.gateCode === candidate);
+      }
+      return !hasGateConflictInWindow(allocations, candidate, entry.etdMinutes);
+    });
+
+    if (!selected) {
+      selected = ALLOWED_GATE_CODES[index % ALLOWED_GATE_CODES.length];
+    }
+
+    setFlightCardGateCode(entry.card, selected);
+    allocations.push({ gateCode: selected, etdMinutes: entry.etdMinutes });
   });
 };
 
@@ -277,8 +602,8 @@ const enableAssignedTeamsCards = () => {
     card.classList.add("is-pressable");
     card.setAttribute("tabindex", "0");
     card.setAttribute("role", "button");
-    const gateLabel = card.querySelector(".gate-label")?.textContent.trim();
-    const label = gateLabel ? `Assigned Teams ${gateLabel}` : "Assigned Teams";
+    const gateCode = getFlightCardGateCode(card);
+    const label = gateCode ? `Assigned Teams Gate ${gateCode}` : "Assigned Teams";
     card.setAttribute("aria-label", label);
   });
 
@@ -406,6 +731,10 @@ const createFlightCardElement = (data) => {
   card.className = "card flight-card";
   card.dataset.userCreated = "true";
   card.dataset.remarks = data.remarks || "";
+  const normalizedGateCode = normalizeAllowedGateCode(data.gate);
+  if (normalizedGateCode) {
+    card.dataset.currentGateCode = normalizedGateCode;
+  }
   card.innerHTML = `
     <div class="gate-banner">
       <span class="gate-label">${formatGateLabel(data.gate)}</span>
@@ -440,8 +769,8 @@ const setCardPressable = (card) => {
   card.classList.add("is-pressable");
   card.setAttribute("tabindex", "0");
   card.setAttribute("role", "button");
-  const gateLabel = card.querySelector(".gate-label")?.textContent.trim();
-  const label = gateLabel ? `Assigned Teams ${gateLabel}` : "Assigned Teams";
+  const gateCode = getFlightCardGateCode(card);
+  const label = gateCode ? `Assigned Teams Gate ${gateCode}` : "Assigned Teams";
   card.setAttribute("aria-label", label);
 };
 
@@ -492,10 +821,11 @@ const openFlightEditor = (card) => {
   title.textContent = editingFlightCard ? "Edit Flight" : "Create Flight";
   save.textContent = editingFlightCard ? "Save Changes" : "Save Flight";
 
+  const existingGateCode = editingFlightCard ? getFlightCardGateCode(editingFlightCard) : "";
   const gateLabel = editingFlightCard
     ? editingFlightCard.querySelector(".gate-label")?.textContent || ""
     : "";
-  gateInput.value = normalizeGateInput(gateLabel);
+  gateInput.value = existingGateCode || normalizeGateInput(gateLabel);
 
   const tagText = editingFlightCard
     ? editingFlightCard.querySelector(".flight-tag")?.textContent || ""
@@ -575,8 +905,14 @@ const saveFlightEditor = () => {
     const grid = document.querySelector(".in-progress-page .card-grid");
     if (grid) grid.appendChild(card);
   } else {
+    const normalizedGateCode = normalizeAllowedGateCode(data.gate);
     const gateLabel = card.querySelector(".gate-label");
-    if (gateLabel) gateLabel.textContent = formatGateLabel(data.gate);
+    if (normalizedGateCode) {
+      setFlightCardGateCode(card, normalizedGateCode);
+    } else if (gateLabel) {
+      gateLabel.textContent = formatGateLabel(data.gate);
+      card.dataset.currentGateCode = "";
+    }
     const flightTag = card.querySelector(".flight-tag");
     if (flightTag) flightTag.textContent = formatFlightTag(data.flightNo);
     const times = card.querySelector(".flight-times");
@@ -604,6 +940,9 @@ const saveFlightEditor = () => {
   applyAssignedTeamDocks();
   applyProgressColors();
   applyStatusGateColors();
+  enforceInProgressGatePolicy();
+  applyAssignmentsToCards();
+  syncLiveFlightsFromPage();
   movePastEtdToHistory();
   updateGateCount();
   updatePatdownCount();
@@ -611,6 +950,7 @@ const saveFlightEditor = () => {
   updateGateChangeCount();
   updateEnhancedCount();
   updateRtGotForInProgress();
+  syncLiveFlightsFromPage();
   setTimeout(sortInProgressByRT, 0);
   closeFlightEditor();
 };
@@ -646,14 +986,12 @@ const setupFlightEditor = () => {
 
 document.addEventListener("DOMContentLoaded", () => {
   applyStatusGateColors();
-  applyPatdownGateBanner();
-  updateScreeningTypes();
   randomizeRemarksForCards();
   applyRemarksToCards();
-  updatePullCount();
-  updateGateChangeCount();
-  updateEnhancedCount();
-  updatePatdownCount();
+  enforceInProgressGatePolicy();
+  updateScreeningTypes();
+  applySingleGateChangeAlert();
+  applySinglePatdownAlert();
   updateGateCount();
   applyAssignmentsToCards();
   applyTeamOfficerCounts();
@@ -670,7 +1008,9 @@ document.addEventListener("DOMContentLoaded", () => {
   enablePullRandom();
   enableTeamsToggle();
   setupHistoryModal();
+  syncLiveFlightsFromPage();
   movePastEtdToHistory();
+  syncLiveFlightsFromPage();
   setInterval(movePastEtdToHistory, 60000);
 });
 
@@ -787,78 +1127,10 @@ const setupFsLeaderAssignment = () => {
 
 const enablePullRandom = () => {
   const button = document.querySelector("#pull-random");
-  if (!button) return;
-
-  const pullIcon = `
-    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="9" cy="6.5" r="2"/>
-      <path d="M7 12l2.8-2 2.2 2 2.2-1.1"/>
-      <path d="M6 18l2-4 2.2 1.4L12 20"/>
-      <path d="M12.5 12.5l2.5 1.5 1.5 3"/>
-      <path d="M15.5 8.5h6"/>
-      <path d="M19 6l2.5 2.5L19 11"/>
-    </svg>
-  `;
-  const closeIcon = `
-    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M6 4h12v16H6z"/>
-      <path d="M10 4v16"/>
-      <circle cx="14.5" cy="12" r="0.9"/>
-    </svg>
-  `;
-
-  const normalizePullButtons = () => {
-    getInProgressCards().forEach((card) => {
-      card.querySelectorAll(".pull-team").forEach((badge) => {
-        if (badge.tagName === "BUTTON") return;
-        const replacement = document.createElement("button");
-        replacement.type = "button";
-        replacement.className = "pull-team";
-        replacement.setAttribute("aria-label", "Pull Team");
-        replacement.setAttribute("data-label", "Pull Team");
-        replacement.innerHTML = pullIcon;
-        badge.replaceWith(replacement);
-      });
-    });
-  };
-
-  const applyRandomPull = () => {
-    normalizePullButtons();
-    getInProgressCards().forEach((card) => {
-      card.querySelectorAll(".pull-team, .close-gate").forEach((badge) => badge.remove());
-      card.classList.remove("has-pull");
-    });
-
-    const cards = getInProgressCards();
-    if (cards.length === 0) return;
-    const count = Math.max(1, Math.floor(cards.length / 3));
-    const shuffled = cards.sort(() => 0.5 - Math.random()).slice(0, count);
-
-    shuffled.forEach((card) => {
-      const actions = card.querySelector(".gate-actions");
-      if (!actions) return;
-      const pull = document.createElement("button");
-      pull.type = "button";
-      pull.className = "pull-team";
-      pull.setAttribute("aria-label", "Pull Team");
-      pull.setAttribute("data-label", "Pull Team");
-      pull.innerHTML = pullIcon;
-      const close = document.createElement("button");
-      close.type = "button";
-      close.className = "close-gate";
-      close.setAttribute("aria-label", "Close Gate");
-      close.setAttribute("data-label", "Close Gate");
-      close.innerHTML = closeIcon;
-      actions.appendChild(pull);
-      actions.appendChild(close);
-      card.classList.add("has-pull");
-    });
-
-    updatePullCount();
-  };
-
-  button.addEventListener("click", applyRandomPull);
-  applyRandomPull();
+  if (button) {
+    button.addEventListener("click", applySinglePullAlert);
+  }
+  applySinglePullAlert();
 };
 
 const modal = document.querySelector(".modal");
@@ -921,10 +1193,322 @@ const assignments = {};
 const STORAGE_KEYS = {
   fsLeader: "gateinterface.fsLeader",
   assignments: "gateinterface.assignments",
+  liveFlights: "gateinterface.liveFlights",
 };
 
 const normalizeFsLeaderName = (value) =>
   String(value || "").replace(/^FS\s*-\s*/i, "").trim();
+
+const normalizeStorageLabel = (value) =>
+  String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const normalizeStorageGateLabel = (value) => {
+  const allowedCode = normalizeAllowedGateCode(value);
+  if (allowedCode) return `Gate ${allowedCode}`;
+  const gate = normalizeStorageLabel(value).replace(/^gate\s*/i, "");
+  return gate ? `Gate ${gate}` : "Gate --";
+};
+
+const normalizeStorageFlightNumber = (value) => {
+  const raw = normalizeStorageLabel(value).toUpperCase();
+  if (!raw) return "-";
+  const match = raw.match(/[A-Z]{1,3}\s*\d+/);
+  return match ? match[0].replace(/\s+/g, " ") : raw;
+};
+
+const normalizeStorageTime = (value) => {
+  const match = String(value || "").match(/(\d{4})hrs/i);
+  return match ? `${match[1]}hrs` : "-";
+};
+
+const parseStorageTimeToMinutes = (value) => {
+  const match = normalizeStorageTime(value).match(/(\d{2})(\d{2})hrs/);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+};
+
+const normalizeMinutesValue = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  return ((Math.trunc(numeric) % 1440) + 1440) % 1440;
+};
+
+const deriveRtMinutesFromEtd = (etdValue) => {
+  const etdMinutes = parseStorageTimeToMinutes(etdValue);
+  if (etdMinutes === null) return null;
+  return ((etdMinutes - 90) % 1440 + 1440) % 1440;
+};
+
+const getLiveFlightRtMinutes = (flight) => {
+  if (!flight || typeof flight !== "object") return null;
+  const fromStored = normalizeMinutesValue(flight.rtMinutes);
+  if (fromStored !== null) return fromStored;
+
+  const rtMatch = String(flight.rt || "").match(/(\d{4})hrs/i);
+  if (rtMatch) {
+    const parsed = parseStorageTimeToMinutes(`${rtMatch[1]}hrs`);
+    if (parsed !== null) return parsed;
+  }
+
+  return deriveRtMinutesFromEtd(flight.etd);
+};
+
+const isWithinForwardRtWindow = (rtMinutes, windowMinutes = RT_FORWARD_WINDOW_MINUTES) => {
+  const normalizedRt = normalizeMinutesValue(rtMinutes);
+  if (normalizedRt === null) return false;
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const minutesUntilRt = (normalizedRt - nowMinutes + 1440) % 1440;
+  return minutesUntilRt <= windowMinutes;
+};
+
+const extractStorageTimeFromCard = (card, label) => {
+  const times = card?.querySelector(".flight-times");
+  if (!times) return "-";
+  const span = Array.from(times.querySelectorAll("span")).find((item) =>
+    item.textContent.trim().startsWith(label)
+  );
+  if (!span) return "-";
+  return normalizeStorageTime(span.textContent);
+};
+
+const readLiveFlightsFromStorage = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.liveFlights);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+const writeLiveFlightsToStorage = (flights) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.liveFlights, JSON.stringify(flights));
+  } catch (error) {
+    // Ignore storage errors.
+  }
+};
+
+const normalizeAssignmentRef = (value) => normalizeStorageLabel(value);
+
+const buildFlightRefAssigneeMap = () => {
+  const assigneeMap = new Map();
+  Object.entries(assignments).forEach(([fsLabel, refs]) => {
+    if (!Array.isArray(refs)) return;
+    const normalizedFs = normalizeFsLeaderName(fsLabel);
+    if (!normalizedFs || /unassigned/i.test(normalizedFs)) return;
+    refs.forEach((ref) => {
+      const normalizedRef = normalizeAssignmentRef(ref);
+      if (!normalizedRef || assigneeMap.has(normalizedRef)) return;
+      assigneeMap.set(normalizedRef, normalizedFs);
+    });
+  });
+  return assigneeMap;
+};
+
+const getAssignedFsForFlightRef = (
+  flightRef,
+  assigneeMap = buildFlightRefAssigneeMap()
+) => {
+  const normalizedRef = normalizeAssignmentRef(flightRef);
+  if (!normalizedRef) return "";
+  return assigneeMap.get(normalizedRef) || "";
+};
+
+const applyAssignmentsToLiveFlights = () => {
+  const flights = readLiveFlightsFromStorage();
+  if (!flights.length) return;
+  const assigneeMap = buildFlightRefAssigneeMap();
+  let changed = false;
+  const nextFlights = flights.map((flight) => {
+    const flightRef = normalizeAssignmentRef(flight?.id);
+    const assignedFs = flightRef ? assigneeMap.get(flightRef) || "" : "";
+    if ((flight.assignedFs || "") === assignedFs) return flight;
+    changed = true;
+    return { ...flight, assignedFs };
+  });
+  if (changed) {
+    writeLiveFlightsToStorage(nextFlights);
+  }
+};
+
+const createStorageFlightId = ({ gate, flightNo, etd }) => {
+  const gateId = normalizeStorageGateLabel(gate).toLowerCase().replace(/\s+/g, "-");
+  const flightId = normalizeStorageFlightNumber(flightNo)
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+  const etdId = normalizeStorageTime(etd).toLowerCase().replace(/\s+/g, "-");
+  return `${flightId}_${gateId}_${etdId}`.replace(/[^a-z0-9_-]/g, "");
+};
+
+const getCardStorageFlightId = (card, fallbackIndex = 0) => {
+  if (!card) return "";
+  const stored = normalizeStorageLabel(card.dataset.flightId || "");
+  if (stored) return stored;
+  const gateCode = getFlightCardGateCode(card);
+  const gateText =
+    gateCode
+      ? `Gate ${gateCode}`
+      : card.querySelector(".gate-label")?.textContent ||
+        card.querySelector(".gate-banner")?.textContent ||
+        "Gate --";
+  const flightText = card.querySelector(".flight-tag")?.textContent || "-";
+  const etd = extractStorageTimeFromCard(card, "ETD");
+  const generated =
+    createStorageFlightId({
+      gate: gateText,
+      flightNo: flightText,
+      etd,
+    }) || `flight-${fallbackIndex + 1}`;
+  card.dataset.flightId = generated;
+  return generated;
+};
+
+const getAssignedFsFromCard = (
+  card,
+  flightRef,
+  assigneeMap = buildFlightRefAssigneeMap()
+) => {
+  const fromAssignment = getAssignedFsForFlightRef(flightRef, assigneeMap);
+  if (fromAssignment) return fromAssignment;
+  const badgeText = card?.querySelector(".fs-badge")?.textContent || "";
+  const match = badgeText.match(/FS:\s*(.+)$/i);
+  const fromBadge = normalizeFsLeaderName(match ? match[1] : "");
+  if (fromBadge && !/unassigned/i.test(fromBadge)) {
+    return fromBadge;
+  }
+  return "";
+};
+
+const collectLiveFlightsFromPage = () => {
+  const page = document.querySelector(".in-progress-page");
+  if (!page) return [];
+  const historyGrid = document.querySelector("#history-grid");
+  const mainCards = Array.from(page.querySelectorAll(".flight-card"));
+  const historyCards = historyGrid
+    ? Array.from(historyGrid.querySelectorAll(".flight-card"))
+    : [];
+  const cards = Array.from(new Set([...mainCards, ...historyCards]));
+  if (!cards.length) return [];
+
+  const existingMap = new Map(
+    readLiveFlightsFromStorage()
+      .filter((flight) => flight && typeof flight === "object" && flight.id)
+      .map((flight) => [flight.id, flight])
+  );
+  const assigneeMap = buildFlightRefAssigneeMap();
+  const uniqueIds = new Set();
+
+  return cards.map((card, index) => {
+    const gateCode = getFlightCardGateCode(card);
+    const gateLabel = gateCode
+      ? `Gate ${gateCode}`
+      : normalizeStorageGateLabel(
+          card.querySelector(".gate-label")?.textContent ||
+            card.querySelector(".gate-banner")?.textContent ||
+            "Gate --"
+        );
+    const flightNo = normalizeStorageFlightNumber(
+      card.querySelector(".flight-tag")?.textContent || "-"
+    );
+    const etd = extractStorageTimeFromCard(card, "ETD");
+    const std = extractStorageTimeFromCard(card, "STD");
+    const rt = extractStorageTimeFromCard(card, "RT");
+    const rtMinutes =
+      normalizeMinutesValue(card.dataset.rtMinutes) ?? deriveRtMinutesFromEtd(etd);
+    let id = getCardStorageFlightId(card, index);
+    while (uniqueIds.has(id)) {
+      id = `${id}-${index + 1}`;
+    }
+    uniqueIds.add(id);
+    card.dataset.flightId = id;
+
+    const stored = existingMap.get(id);
+    const isInHistory = Boolean(historyGrid && historyGrid.contains(card));
+    const status =
+      isInHistory || card.classList.contains("history-card") || stored?.status === "completed"
+        ? "completed"
+        : "assigned";
+
+    return {
+      id,
+      gate: gateLabel,
+      flightNo,
+      route: normalizeStorageLabel(card.querySelector(".flight-top .card-sub")?.textContent || ""),
+      etd,
+      std,
+      rt,
+      rtMinutes,
+      assignedFs: getAssignedFsFromCard(card, id, assigneeMap),
+      status,
+      remarks: normalizeStorageLabel(card.dataset.remarks || ""),
+    };
+  });
+};
+
+const syncLiveFlightsFromPage = () => {
+  const flights = collectLiveFlightsFromPage();
+  if (!flights.length) return;
+  const existing = readLiveFlightsFromStorage();
+  if (JSON.stringify(existing) === JSON.stringify(flights)) return;
+  writeLiveFlightsToStorage(flights);
+};
+
+const applyLiveFlightStatusesToPage = () => {
+  const page = document.querySelector(".in-progress-page");
+  const historyGrid = document.querySelector("#history-grid");
+  if (!page || !historyGrid) return;
+  const mainGrid = page.querySelector(".card-grid:not(.history-grid)");
+  if (!mainGrid) return;
+
+  const statusById = new Map(
+    readLiveFlightsFromStorage()
+      .filter((flight) => flight && typeof flight === "object" && flight.id)
+      .map((flight) => [flight.id, flight.status])
+  );
+  if (!statusById.size) return;
+
+  const cards = Array.from(
+    new Set([
+      ...Array.from(page.querySelectorAll(".flight-card")),
+      ...Array.from(historyGrid.querySelectorAll(".flight-card")),
+    ])
+  );
+
+  cards.forEach((card, index) => {
+    const id = getCardStorageFlightId(card, index);
+    const status = statusById.get(id);
+    if (status === "completed") {
+      card.classList.add("history-card");
+      if (card.parentElement !== historyGrid) {
+        historyGrid.appendChild(card);
+      }
+      return;
+    }
+    if (card.parentElement === historyGrid && status !== "completed") {
+      card.classList.remove("history-card");
+      mainGrid.appendChild(card);
+    }
+  });
+
+  if (historyModal && historyModal.classList.contains("is-visible")) {
+    renderHistoryCards();
+  }
+};
+
+const getActiveLiveFlights = () =>
+  readLiveFlightsFromStorage().filter(
+    (flight) => flight && flight.status !== "completed"
+  );
+
+const getWindowedActiveLiveFlights = () =>
+  getActiveLiveFlights().filter((flight) =>
+    isWithinForwardRtWindow(getLiveFlightRtMinutes(flight))
+  );
 
 const loadFsLeaderFromStorage = () => {
   try {
@@ -965,7 +1549,16 @@ const loadAssignmentsFromStorage = () => {
     Object.keys(assignments).forEach((key) => delete assignments[key]);
     Object.entries(data).forEach(([key, value]) => {
       if (Array.isArray(value)) {
-        assignments[key] = value;
+        const normalizedRefs = Array.from(
+          new Set(
+            value
+              .map((ref) => normalizeAssignmentRef(ref))
+              .filter((ref) => ref && !/^gate\s*[ab]\d+$/i.test(ref))
+          )
+        );
+        if (normalizedRefs.length) {
+          assignments[key] = normalizedRefs;
+        }
       }
     });
   } catch (error) {
@@ -979,32 +1572,32 @@ const saveAssignmentsToStorage = () => {
   } catch (error) {
     // Ignore storage errors.
   }
+  applyAssignmentsToLiveFlights();
 };
 
 const applyAssignmentsToCards = () => {
   const page = document.querySelector(".in-progress-page");
   if (!page) return;
-  const entries = Object.entries(assignments);
-  page.querySelectorAll(".flight-card").forEach((card) => {
-    const gateEl = card.querySelector(".gate-label");
+  const assigneeMap = buildFlightRefAssigneeMap();
+  page.querySelectorAll(".flight-card").forEach((card, index) => {
     const fsBadge = card.querySelector(".fs-badge");
-    if (!gateEl || !fsBadge) return;
-    const gateText = gateEl.textContent.replace("Gate", "").trim();
-    const gateLabel = `Gate ${gateText}`;
-    const assigned = entries.find(
-      ([, gates]) => Array.isArray(gates) && gates.includes(gateLabel)
-    );
-    if (assigned) {
-      fsBadge.textContent = `FS: ${assigned[0].replace("FS - ", "")}`;
+    if (!fsBadge) return;
+    const flightRef = getCardStorageFlightId(card, index);
+    const assignedFs = getAssignedFsForFlightRef(flightRef, assigneeMap);
+    if (assignedFs) {
+      fsBadge.textContent = `FS: ${assignedFs.replace("FS - ", "")}`;
     } else {
       fsBadge.textContent = "FS: Unassigned";
     }
   });
+  syncLiveFlightsFromPage();
+  applyAssignmentsToLiveFlights();
 };
 
 const refreshAssignmentsFromStorage = () => {
   loadAssignmentsFromStorage();
   applyAssignmentsToCards();
+  applyAssignmentsToLiveFlights();
   document.dispatchEvent(new Event("assignments:updated"));
 };
 
@@ -1037,6 +1630,7 @@ const resetPersistentStateOnReload = () => {
   applyFsLeaderToPage("");
   Object.keys(assignments).forEach((key) => delete assignments[key]);
   applyAssignmentsToCards();
+  applyAssignmentsToLiveFlights();
   document.dispatchEvent(new Event("assignments:updated"));
   return true;
 };
@@ -1047,6 +1641,7 @@ const initializePersistentState = () => {
     loadAssignmentsFromStorage();
     applyFsLeaderToPage(loadFsLeaderFromStorage());
     applyAssignmentsToCards();
+    applyAssignmentsToLiveFlights();
     document.dispatchEvent(new Event("assignments:updated"));
   }
 };
@@ -1059,6 +1654,13 @@ window.addEventListener("storage", (event) => {
   }
   if (event.key === STORAGE_KEYS.fsLeader) {
     refreshFsLeaderFromStorage();
+  }
+  if (event.key === STORAGE_KEYS.liveFlights) {
+    applyLiveFlightStatusesToPage();
+    applyRtWindowFilter();
+    if (assignList) {
+      populateAssignGates();
+    }
   }
 });
 
@@ -1187,6 +1789,7 @@ const updateRtGotForInProgress = () => {
 document.addEventListener("DOMContentLoaded", () => {
   updateGotTimes();
   updateRtGotForInProgress();
+  syncLiveFlightsFromPage();
   setTimeout(sortInProgressByRT, 0);
 });
 
@@ -1429,8 +2032,13 @@ const openAssignedTeamsModal = (card) => {
   if (modalAction) modalAction.classList.add("is-hidden");
   if (modalTitle) modalTitle.textContent = "Assigned Teams";
 
+  const gateCode = getFlightCardGateCode(card);
   const gateEl = card.querySelector(".gate-label");
-  const gateText = gateEl ? gateEl.textContent.trim() : "Gate";
+  const gateText = gateCode
+    ? `Gate ${gateCode}`
+    : gateEl
+      ? gateEl.textContent.trim()
+      : "Gate";
   if (modalGate) modalGate.textContent = gateText || "Gate";
   setModalGatePatdown(false);
 
@@ -1493,6 +2101,8 @@ const getGateLabelForCard = (card) => {
   if (!card) return "Gate";
   const newGate = card.querySelector(".new-gate")?.textContent.trim();
   if (newGate) return `Gate ${newGate}`;
+  const gateCode = getFlightCardGateCode(card);
+  if (gateCode) return `Gate ${gateCode}`;
   const gateEl = card.querySelector(".gate-label");
   if (gateEl) return normalizeGateLabel(gateEl.textContent);
   const banner = card.querySelector(".gate-banner");
@@ -1532,21 +2142,27 @@ const updateScreeningTypes = () => {
   );
   if (!cards.length) return;
 
-  const selected = new Set(
-    cards.filter((card) => card.dataset.screeningShow === "true")
+  const candidates = getFsAlertCandidateCards();
+  const selectedCard = pickPreferredAlertCard(
+    candidates,
+    (card) =>
+      card.dataset.screeningShow === "true" || card.classList.contains("has-screening")
   );
-  const count = Math.min(6, cards.length);
-  const needed = count - selected.size;
-  const pool = cards.filter((card) => !card.dataset.screeningShow);
-  if (needed > 0) {
-    const picks = pool.sort(() => 0.5 - Math.random()).slice(0, needed);
-    picks.forEach((card) => selected.add(card));
-  }
 
   cards.forEach((card) => {
-    const shouldShow = selected.has(card);
+    const shouldShow = card === selectedCard;
     card.dataset.screeningShow = shouldShow ? "true" : "false";
     card.classList.toggle("has-screening", shouldShow);
+    const badges = ensureGateBadgesContainer(card);
+    if (badges) {
+      badges.querySelectorAll(".badge-enhanced").forEach((badge) => badge.remove());
+      if (shouldShow) {
+        const badge = document.createElement("span");
+        badge.className = "badge badge-enhanced";
+        badge.textContent = "Enhanced";
+        badges.appendChild(badge);
+      }
+    }
   });
 
   cards.forEach((card) => {
@@ -1716,27 +2332,42 @@ const closeHistoryModal = () => {
   historyModal.classList.remove("is-visible");
 };
 
-const getCurrentMinutes = () => {
+const getCurrentClockMinutes = () => {
   const now = new Date();
   return now.getHours() * 60 + now.getMinutes();
 };
 
-const RT_WINDOW_MINUTES = 90;
+const getCardRtMinutes = (card) => {
+  const stored = Number(card?.dataset.rtMinutes);
+  if (Number.isFinite(stored) && stored >= 0) return stored;
+
+  const rtText =
+    card?.querySelector(".rt-time")?.textContent ||
+    card?.querySelector(".status")?.textContent ||
+    "";
+  const match = rtText.match(/(\d{4})hrs/);
+  if (!match) return null;
+  return toMinutes(`${match[1]}hrs`);
+};
 
 const applyRtWindowFilter = () => {
   if (!document.querySelector(".in-progress-page")) return;
-  const nowMinutes = getCurrentMinutes();
+  const nowMinutes = getCurrentClockMinutes();
   const cards = getInProgressCards();
   cards.forEach((card) => {
-    const rtMinutes = Number(card.dataset.rtMinutes);
+    const rtMinutes = getCardRtMinutes(card);
     if (!Number.isFinite(rtMinutes)) {
-      card.classList.remove("is-hidden");
+      card.classList.add("is-hidden");
       return;
     }
-    const minutesSinceRt = (nowMinutes - rtMinutes + 1440) % 1440;
-    const isWithinWindow = minutesSinceRt <= RT_WINDOW_MINUTES;
+    const minutesUntilRt = (rtMinutes - nowMinutes + 1440) % 1440;
+    const isWithinWindow = minutesUntilRt <= RT_FORWARD_WINDOW_MINUTES;
     card.classList.toggle("is-hidden", !isWithinWindow);
   });
+  applySinglePullAlert();
+  applySingleGateChangeAlert();
+  updateScreeningTypes();
+  applySinglePatdownAlert();
   updateGateCount();
   updatePullCount();
   updateGateChangeCount();
@@ -1748,19 +2379,9 @@ const movePastEtdToHistory = () => {
   const page = document.querySelector(".in-progress-page");
   const historyGrid = document.querySelector("#history-grid");
   if (!page || !historyGrid) return;
-  const mainGrid = page.querySelector(".card-grid:not(.history-grid)");
-  if (!mainGrid) return;
-  const nowMinutes = getCurrentMinutes();
-  Array.from(mainGrid.querySelectorAll(".flight-card")).forEach((card) => {
-    const etd = getTimeLabelFromCard(card, "ETD");
-    const etdMinutes = toMinutes(etd);
-    if (etdMinutes === null) return;
-    if (etdMinutes <= nowMinutes) {
-      card.classList.add("history-card");
-      historyGrid.appendChild(card);
-    }
-  });
+  applyLiveFlightStatusesToPage();
   applyRtWindowFilter();
+  syncLiveFlightsFromPage();
   if (historyModal && historyModal.classList.contains("is-visible")) {
     renderHistoryCards();
   }
@@ -1909,40 +2530,30 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeModal();
 });
 
-const defaultGates = [
-  "A1",
-  "A3",
-  "A5",
-  "A7",
-  "A9",
-  "A12",
-  "B1",
-  "B3",
-  "B5",
-  "B7",
-  "B9",
-  "B10",
-  "C1",
-  "C3",
-  "C5",
-  "C7",
-  "C9",
-  "D1",
-  "D2",
-  "D3",
-  "E1",
-  "E3",
-  "E5",
-  "E11",
-];
+const defaultGates = ALLOWED_GATE_CODES.slice();
 
 const getGateTimes = () => {
   const gateTimes = {};
+  getWindowedActiveLiveFlights().forEach((flight) => {
+    const gateCode = normalizeAllowedGateCode(flight.gate);
+    if (!gateCode) return;
+    const gate = `Gate ${gateCode}`;
+    const etd = normalizeStorageTime(flight.etd);
+    if (gate !== "Gate --" && etd !== "-") {
+      gateTimes[gate] = etd;
+    }
+  });
+  if (Object.keys(gateTimes).length > 0) {
+    return gateTimes;
+  }
+  if (getActiveLiveFlights().length > 0) {
+    return gateTimes;
+  }
   document.querySelectorAll(".flight-card").forEach((card) => {
-    const gateEl = card.querySelector(".gate-label");
+    const gateCode = getFlightCardGateCode(card);
     const etdEl = card.querySelector(".flight-times span:first-child");
-    if (!gateEl || !etdEl) return;
-    const gate = `Gate ${gateEl.textContent.replace("Gate", "").trim()}`;
+    if (!gateCode || !etdEl) return;
+    const gate = `Gate ${gateCode}`;
     const etd = etdEl.textContent.replace("ETD:", "").trim();
     gateTimes[gate] = etd;
   });
@@ -1967,17 +2578,55 @@ const getGateTimes = () => {
 
 const populateAssignGates = () => {
   if (!assignList) return;
+  const activeFlights = getActiveLiveFlights();
+  const liveFlights = getWindowedActiveLiveFlights()
+    .map((flight, index) => {
+      const gateCode =
+        normalizeAllowedGateCode(flight.gate) ||
+        ALLOWED_GATE_CODES[index % ALLOWED_GATE_CODES.length];
+      const flightRef =
+        normalizeAssignmentRef(flight.id) ||
+        createStorageFlightId({
+          gate: `Gate ${gateCode}`,
+          flightNo: flight.flightNo || "-",
+          etd: flight.etd || "-",
+        });
+      return {
+        ref: flightRef,
+        gate: `Gate ${gateCode}`,
+        flightNo: normalizeStorageFlightNumber(flight.flightNo || "-"),
+        etd: normalizeStorageTime(flight.etd),
+      };
+    })
+    .filter((flight) => flight.ref && flight.gate !== "Gate --");
+
+  if (liveFlights.length) {
+    assignList.innerHTML = liveFlights
+      .map(
+        (flight) => `<button class="assign-gate" type="button" data-gate="${flight.gate}" data-flight-ref="${flight.ref}">
+        <span class="assign-gate-label">${flight.gate}</span>
+        <span class="assign-gate-time">Flight ${flight.flightNo}</span>
+        <span class="assign-gate-time">ETD ${flight.etd}</span>
+      </button>`
+      )
+      .join("");
+    return;
+  }
+
+  if (activeFlights.length > 0) {
+    assignList.innerHTML =
+      "<div class=\"assign-row\"><span>No flights within RT current time + 90 mins</span><span>-</span></div>";
+    return;
+  }
+
   const gateTimes = getGateTimes();
-  const gatesFromCards = Array.from(document.querySelectorAll(".gate-label"))
-    .map((el) => el.textContent.replace("Gate", "").trim())
-    .filter(Boolean);
-  const gates = gatesFromCards.length ? gatesFromCards : defaultGates;
-  assignList.innerHTML = gates
+  assignList.innerHTML = defaultGates
     .map((gate) => {
       const gateLabel = `Gate ${gate}`;
       const time = gateTimes[gateLabel] || "--:--";
       return `<button class="assign-gate" type="button" data-gate="${gateLabel}">
         <span class="assign-gate-label">${gateLabel}</span>
+        <span class="assign-gate-time">Flight -</span>
         <span class="assign-gate-time">ETD ${time}</span>
       </button>`;
     })
@@ -1998,38 +2647,62 @@ if (assignSubmit) {
     const selectedButtons = Array.from(
       document.querySelectorAll(".assign-gate.is-selected")
     );
-    const gates = selectedButtons.map((btn) => btn.dataset.gate || btn.textContent.trim());
-    if (!selected || gates.length === 0) return;
-    const existing = assignments[selected] || [];
-    const mergedGates = Array.from(new Set([...existing, ...gates]));
-    if (fsName) {
-      fsName.textContent = `${selected} (${mergedGates.join(", ")})`;
-    }
-    assignments[selected] = mergedGates;
-    document.querySelectorAll(".flight-card").forEach((card) => {
-      const gateEl = card.querySelector(".gate-label");
-      const fsBadge = card.querySelector(".fs-badge");
-      if (!gateEl || !fsBadge) return;
-      const gateText = `Gate ${gateEl.textContent.replace("Gate", "").trim()}`;
-      if (mergedGates.includes(gateText)) {
-        fsBadge.textContent = `FS: ${selected.replace("FS - ", "")}`;
+    const selectedRefs = Array.from(
+      new Set(
+        selectedButtons
+          .map((btn) => normalizeAssignmentRef(btn.dataset.flightRef))
+          .filter(Boolean)
+      )
+    );
+    if (!selected || selectedRefs.length === 0) return;
+
+    const selectedRefSet = new Set(selectedRefs);
+    Object.keys(assignments).forEach((fsKey) => {
+      const refs = Array.isArray(assignments[fsKey]) ? assignments[fsKey] : [];
+      const remaining = refs
+        .map((ref) => normalizeAssignmentRef(ref))
+        .filter((ref) => ref && !selectedRefSet.has(ref));
+      if (remaining.length) {
+        assignments[fsKey] = Array.from(new Set(remaining));
+      } else {
+        delete assignments[fsKey];
       }
     });
-    selectedButtons.forEach((btn) => btn.remove());
+
+    const existing = Array.isArray(assignments[selected]) ? assignments[selected] : [];
+    const mergedRefs = Array.from(
+      new Set([...existing.map((ref) => normalizeAssignmentRef(ref)).filter(Boolean), ...selectedRefs])
+    );
+    if (fsName) {
+      fsName.textContent = `${selected} (${mergedRefs.length} flights)`;
+    }
+    assignments[selected] = mergedRefs;
+    applyAssignmentsToCards();
+    selectedButtons.forEach((btn) => btn.classList.remove("is-selected"));
     saveAssignmentsToStorage();
     document.dispatchEvent(new Event("assignments:updated"));
-    document.dispatchEvent(new Event("assignments:updated"));
+    populateAssignGates();
   });
 }
 
 if (assignSummary) {
   const renderTimeline = () => {
-    const gateTimes = getGateTimes();
+    const liveFlightMap = new Map(
+      readLiveFlightsFromStorage()
+        .filter((flight) => flight && typeof flight === "object")
+        .map((flight) => [normalizeAssignmentRef(flight.id), flight])
+    );
 
-    const rows = Object.entries(assignments).map(([fs, gates]) => {
-      const times = gates
-        .map((gate) => ({ gate, time: gateTimes[gate] || "----" }))
-        .filter((item) => item.time !== "----");
+    const rows = Object.entries(assignments).map(([fs, refs]) => {
+      const times = (Array.isArray(refs) ? refs : [])
+        .map((ref) => liveFlightMap.get(normalizeAssignmentRef(ref)))
+        .filter(Boolean)
+        .map((flight) => ({
+          gate: normalizeStorageGateLabel(flight.gate),
+          time: normalizeStorageTime(flight.etd),
+          flightNo: normalizeStorageFlightNumber(flight.flightNo || "-"),
+        }))
+        .filter((item) => item.time !== "----" && item.time !== "-");
       const minutes = times.map((item) => toMinutes(item.time)).filter((m) => m !== null);
       const minRaw = minutes.length ? Math.min(...minutes) : 0;
       const maxRaw = minutes.length ? Math.max(...minutes) : 1440;
@@ -2071,7 +2744,7 @@ if (assignSummary) {
           const top = 8 + rowIndex * rowHeight;
           return `<div class="timeline-marker" style="left:${adjusted}%; top:${top}px;">
               <div class="timeline-dot"></div>
-              <div class="timeline-label-small">${item.gate} ${item.time}</div>
+              <div class="timeline-label-small">${item.flightNo} ${item.gate} ${item.time}</div>
             </div>`;
         })
         .join("");

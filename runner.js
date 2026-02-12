@@ -1,3 +1,5 @@
+const STORAGE_KEY_LIVE_FLIGHTS = "gateinterface.liveFlights";
+
 const addRequiredMarker = (card, className, text) => {
   if (!card || card.querySelector(`.${className}`)) return;
   const route = card.querySelector(".runner-route");
@@ -9,29 +11,134 @@ const addRequiredMarker = (card, className, text) => {
   route.insertAdjacentElement("afterend", marker);
 };
 
-const combinedMobileList = document.querySelector("#runner-mobile-list");
-if (combinedMobileList) {
-  document
-    .querySelectorAll(".runner-device-grid .runner-card")
-    .forEach((card) => combinedMobileList.appendChild(card));
-}
+const normalizeStorageLabel = (value) =>
+  String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
 
+const normalizeGateLabel = (value) => {
+  const gate = normalizeStorageLabel(value).replace(/^gate\s*/i, "");
+  return gate ? `Gate ${gate}` : "Gate --";
+};
+
+const normalizeGateCode = (value) =>
+  normalizeGateLabel(value).replace(/^Gate\s*/i, "") || "--";
+
+const normalizeFlightNumber = (value) => {
+  const raw = normalizeStorageLabel(value).toUpperCase();
+  if (!raw) return "-";
+  const match = raw.match(/[A-Z]{1,3}\s*\d+/);
+  return match ? match[0].replace(/\s+/g, " ") : raw;
+};
+
+const normalizeTimeLabel = (value) => {
+  const match = String(value || "").match(/(\d{4})hrs/i);
+  return match ? `${match[1]}hrs` : "-";
+};
+
+const parseHrsToMinutes = (value) => {
+  const match = normalizeTimeLabel(value).match(/(\d{2})(\d{2})hrs/);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+};
+
+const formatHrsAsClock = (value) => {
+  const match = normalizeTimeLabel(value).match(/(\d{2})(\d{2})hrs/);
+  if (!match) return "--:--";
+  return `${match[1]}:${match[2]}`;
+};
+
+const formatClockAsHrs = (value) => {
+  const match = String(value || "").match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return "--";
+  const hours = Number(match[1]).toString().padStart(2, "0");
+  const minutes = match[2];
+  return `${hours}${minutes}hrs`;
+};
+
+const parseClockToMinutes = (value) => {
+  const match = String(value || "").match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+  return hours * 60 + minutes;
+};
+
+const formatMinutesAsHrs = (totalMinutes) => {
+  if (totalMinutes === null) return "--";
+  const safeMinutes = ((totalMinutes % 1440) + 1440) % 1440;
+  const hours = Math.floor(safeMinutes / 60)
+    .toString()
+    .padStart(2, "0");
+  const minutes = (safeMinutes % 60).toString().padStart(2, "0");
+  return `${hours}${minutes}hrs`;
+};
+
+const offsetClockByMinutes = (clock, deltaMinutes) => {
+  const minutes = parseClockToMinutes(clock);
+  if (minutes === null) return null;
+  return minutes + deltaMinutes;
+};
+
+const readLiveFlightsFromStorage = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_LIVE_FLIGHTS);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+const writeLiveFlightsToStorage = (flights) => {
+  try {
+    localStorage.setItem(STORAGE_KEY_LIVE_FLIGHTS, JSON.stringify(flights));
+  } catch (error) {
+    // Ignore storage errors.
+  }
+};
+
+const updateLiveFlight = (flightId, updater) => {
+  if (!flightId || typeof updater !== "function") return null;
+  const flights = readLiveFlightsFromStorage();
+  const index = flights.findIndex((flight) => flight && flight.id === flightId);
+  if (index === -1) return null;
+  const current = flights[index];
+  const next = updater(current);
+  if (!next || typeof next !== "object") return null;
+  flights[index] = next;
+  writeLiveFlightsToStorage(flights);
+  return next;
+};
+
+const desktopDevices = Array.from(
+  document.querySelectorAll(".runner-device-grid .runner-device")
+);
+const mobileDevice = document.querySelector(".runner-mobile-device");
+const allDevices = mobileDevice ? [...desktopDevices, mobileDevice] : [...desktopDevices];
 const runnerDeviceControllers = new WeakMap();
 
-document.querySelectorAll(".runner-device").forEach((device) => {
-  const tabs = device.querySelectorAll(".runner-tab");
-  const cards = device.querySelectorAll(".runner-card");
-  const list = device.querySelector(".runner-list");
-  let emptyState = null;
-  if (list) {
-    emptyState = list.querySelector(".runner-empty-state");
-    if (!emptyState) {
-      emptyState = document.createElement("div");
-      emptyState.className = "runner-empty-state is-hidden";
-      emptyState.setAttribute("aria-live", "polite");
-      list.appendChild(emptyState);
-    }
+const ensureDeviceEmptyState = (list) => {
+  if (!list) return null;
+  let emptyState = list.querySelector(".runner-empty-state");
+  if (!emptyState) {
+    emptyState = document.createElement("div");
+    emptyState.className = "runner-empty-state is-hidden";
+    emptyState.setAttribute("aria-live", "polite");
+    list.appendChild(emptyState);
   }
+  return emptyState;
+};
+
+const setupRunnerDevice = (device) => {
+  if (!device || device.dataset.runnerReady === "true") return;
+  device.dataset.runnerReady = "true";
+
+  const tabs = Array.from(device.querySelectorAll(".runner-tab"));
+  const list = device.querySelector(".runner-list");
+  const emptyState = ensureDeviceEmptyState(list);
 
   const setRunnerTab = (tab) => {
     tabs.forEach((item) => {
@@ -42,6 +149,8 @@ document.querySelectorAll(".runner-device").forEach((device) => {
 
     const status = tab?.dataset.status || "assigned";
     let visibleCards = 0;
+    const cards = list ? Array.from(list.querySelectorAll(".runner-card")) : [];
+
     cards.forEach((card) => {
       const matches = card.dataset.status === status;
       card.classList.toggle("is-hidden", !matches);
@@ -60,31 +169,69 @@ document.querySelectorAll(".runner-device").forEach((device) => {
     if (activeTab) setRunnerTab(activeTab);
   };
 
-  runnerDeviceControllers.set(device, { refreshCurrentTab });
-
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => setRunnerTab(tab));
   });
 
-  const activeTab = device.querySelector(".runner-tab.is-active") || tabs[0];
-  if (activeTab) {
-    setRunnerTab(activeTab);
-  }
+  runnerDeviceControllers.set(device, { refreshCurrentTab });
+  refreshCurrentTab();
+};
 
-  const eligibleCards = Array.from(cards).filter(
-    (card) => card.dataset.status === "assigned"
-  );
-  if (eligibleCards.length > 0) {
-    const randomCard =
-      eligibleCards[Math.floor(Math.random() * eligibleCards.length)];
-    addRequiredMarker(randomCard, "runner-pull-required", "Pull Team required");
-    addRequiredMarker(
-      randomCard,
-      "runner-close-gate-required",
-      "Close Gate required"
-    );
+allDevices.forEach(setupRunnerDevice);
+
+const getRunnerFlights = () =>
+  readLiveFlightsFromStorage()
+    .filter((flight) => flight && typeof flight === "object")
+    .map((flight, index) => {
+      const id = normalizeStorageLabel(flight.id || `flight-${index + 1}`);
+      const gate = normalizeGateLabel(flight.gate);
+      const flightNo = normalizeFlightNumber(flight.flightNo);
+      const etd = normalizeTimeLabel(flight.etd);
+      const std = normalizeTimeLabel(flight.std);
+      const route = normalizeStorageLabel(flight.route || "");
+      const assignedFs = normalizeStorageLabel(flight.assignedFs || "");
+      const remarks = normalizeStorageLabel(flight.remarks || "");
+      const status = flight.status === "completed" ? "completed" : "assigned";
+      return {
+        id,
+        gate,
+        flightNo,
+        etd,
+        std,
+        route,
+        assignedFs,
+        remarks,
+        status,
+      };
+    })
+    .filter((flight) => flight.assignedFs)
+    .sort((a, b) => {
+      const aMinutes = parseHrsToMinutes(a.etd);
+      const bMinutes = parseHrsToMinutes(b.etd);
+      const aSort = aMinutes === null ? Number.MAX_SAFE_INTEGER : aMinutes;
+      const bSort = bMinutes === null ? Number.MAX_SAFE_INTEGER : bMinutes;
+      return aSort - bSort;
+    });
+
+const splitFlightsAcrossDevices = (flights, deviceCount) => {
+  if (deviceCount <= 0) return [];
+  const groups = Array.from({ length: deviceCount }, () => []);
+  flights.forEach((flight, index) => {
+    groups[index % deviceCount].push(flight);
+  });
+  return groups;
+};
+
+const getRequiredActionTargets = (flights) => {
+  const assignedFlights = flights.filter((flight) => flight.status === "assigned");
+  if (!assignedFlights.length) {
+    return { pullId: "", closeId: "" };
   }
-});
+  const pullId = assignedFlights[0].id;
+  const closeId =
+    assignedFlights.length > 1 ? assignedFlights[1].id : assignedFlights[0].id;
+  return { pullId, closeId };
+};
 
 const modal = document.querySelector("#runner-modal");
 const modalBackdrop = document.querySelector("#runner-modal-backdrop");
@@ -94,6 +241,7 @@ const modalReporting = document.querySelector("#runner-modal-reporting");
 const modalFlight = document.querySelector("#runner-modal-flight");
 const modalOpening = document.querySelector("#runner-modal-opening");
 const modalRemarks = document.querySelector("#runner-modal-remarks");
+const modalTeamList = document.querySelector("#runner-modal-team-list");
 const modalSaveButton = document.querySelector("#runner-modal-save");
 const modalCompleteButton = document.querySelector("#runner-modal-complete");
 const modalTeamActions = document.querySelector(".runner-modal-team-actions");
@@ -142,48 +290,16 @@ const pickRandomEntries = (pool, count) =>
   [...pool].sort(() => Math.random() - 0.5).slice(0, count);
 
 const getCardDetails = (card) => {
-  const time = card.querySelector(".runner-time-block")?.textContent.trim() || "--";
-  const gate =
-    card.querySelector(".runner-gate")?.textContent.trim() ||
-    card.querySelector(".runner-gate-change .to")?.textContent.trim() ||
-    "--";
-  const flight = card.querySelector(".runner-flight")?.textContent.trim() || "--";
-  return { time, gate, flight };
+  const time = card?.dataset.time || "--:--";
+  const gate = card?.dataset.gate || "Gate --";
+  const flight = card?.dataset.flight || "--";
+  const etd = card?.dataset.etd || "-";
+  return { time, gate, flight, etd };
 };
 
 const getCardRemarks = (card) => (card ? String(card.dataset.remarks || "") : "");
 
 const isCardCompleted = (card) => card?.dataset.status === "completed";
-
-const parseTimeToMinutes = (timeText) => {
-  const match = /^(\d{1,2}):(\d{2})$/.exec(timeText);
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
-  return hours * 60 + minutes;
-};
-
-const formatMinutesAsHrs = (totalMinutes) => {
-  if (totalMinutes === null) return "--";
-  const safeMinutes = ((totalMinutes % 1440) + 1440) % 1440;
-  const hours = Math.floor(safeMinutes / 60)
-    .toString()
-    .padStart(2, "0");
-  const minutes = (safeMinutes % 60).toString().padStart(2, "0");
-  return `${hours}${minutes}hrs`;
-};
-
-const offsetTime = (timeText, deltaMinutes) => {
-  const minutes = parseTimeToMinutes(timeText);
-  if (minutes === null) return null;
-  return minutes + deltaMinutes;
-};
-
-const formatGateLabel = (gateText) => {
-  const cleaned = String(gateText || "").replace(/^gate\s*/i, "").trim();
-  return cleaned ? `Gate ${cleaned}` : "Gate --";
-};
 
 const getCardActionState = (card) => ({
   hasPull: !!card?.querySelector(".runner-pull-required, .runner-pull-completed"),
@@ -224,18 +340,64 @@ const setCardActionCompleted = (card, actionType) => {
   marker.textContent = config.completedText;
 };
 
+const hashText = (value) => {
+  const text = String(value || "");
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) % 2147483647;
+  }
+  return Math.abs(hash);
+};
+
+const getAssignedTeamsForCard = (card) => {
+  const source = card?.dataset.flightId || card?.dataset.flight || "";
+  const seed = hashText(source);
+  const teams = [];
+  const used = new Set();
+  let cursor = seed || 1;
+  while (teams.length < 4) {
+    const teamId = (cursor % 24) + 1;
+    cursor = (cursor * 13 + 17) % 2147483647;
+    if (used.has(teamId)) continue;
+    used.add(teamId);
+    teams.push({
+      label: `Team ${teamId} (${teamId % 3 === 0 ? 2 : 3})`,
+      signal: (teamId % 4) + 1,
+    });
+  }
+  const mainTeamIndex = seed % teams.length;
+  teams[mainTeamIndex].label = `${teams[mainTeamIndex].label} - Main Team`;
+  return teams;
+};
+
+const renderAssignedTeams = (card) => {
+  if (!modalTeamList) return;
+  const teams = getAssignedTeamsForCard(card);
+  modalTeamList.innerHTML = teams
+    .map((team) => {
+      const signal = Array.from({ length: 4 }, (_, index) => {
+        const activeClass = index < team.signal ? " class=\"is-on\"" : "";
+        return `<span${activeClass}></span>`;
+      }).join("");
+      return `<li class=\"runner-team-row\"><span class=\"runner-team-name\">${team.label}</span><div class=\"runner-team-signal\">${signal}</div></li>`;
+    })
+    .join("");
+};
+
 const setModalFields = (details) => {
   if (modalGate) {
     modalGate.textContent = details.gate;
   }
   if (modalReporting) {
-    modalReporting.textContent = formatMinutesAsHrs(offsetTime(details.time, 0));
+    modalReporting.textContent = formatClockAsHrs(details.time);
   }
   if (modalFlight) {
-    modalFlight.textContent = details.flight;
+    modalFlight.textContent = details.flight || "--";
   }
   if (modalOpening) {
-    modalOpening.textContent = formatMinutesAsHrs(offsetTime(details.time, 20));
+    modalOpening.textContent = formatMinutesAsHrs(
+      offsetClockByMinutes(details.time, 20)
+    );
   }
 };
 
@@ -272,30 +434,31 @@ const setModalActionVisibility = (card) => {
   }
 };
 
-const moveCardToCompleted = (card) => {
-  if (!card) return;
-  card.dataset.status = "completed";
-  const device = card.closest(".runner-device");
-  const controller = device ? runnerDeviceControllers.get(device) : null;
-  if (controller) {
-    controller.refreshCurrentTab();
-  }
+const setModalSaveState = (saved) => {
+  if (!modalSaveButton) return;
+  modalSaveButton.classList.toggle("is-saved", saved);
+  modalSaveButton.textContent = saved ? "Remarks Saved" : "Save Remarks";
 };
 
 const saveModalRemarksToCard = () => {
   if (!activeCard || !modalRemarks) return;
   const text = modalRemarks.value.trim();
-  if (text) {
-    activeCard.dataset.remarks = text;
-    return;
-  }
-  delete activeCard.dataset.remarks;
+  const flightId = activeCard.dataset.flightId;
+  activeCard.dataset.remarks = text;
+  updateLiveFlight(flightId, (flight) => ({ ...flight, remarks: text }));
 };
 
-const setModalSaveState = (saved) => {
-  if (!modalSaveButton) return;
-  modalSaveButton.classList.toggle("is-saved", saved);
-  modalSaveButton.textContent = saved ? "Remarks Saved" : "Save Remarks";
+const setActionSummary = (details) => {
+  if (actionGate) actionGate.textContent = normalizeGateLabel(details.gate);
+  if (actionReporting) {
+    actionReporting.textContent = formatClockAsHrs(details.time);
+  }
+  if (actionFlight) actionFlight.textContent = details.flight || "--";
+  if (actionOpening) {
+    actionOpening.textContent = formatMinutesAsHrs(
+      offsetClockByMinutes(details.time, 20)
+    );
+  }
 };
 
 const renderActionTeamMembers = (members) => {
@@ -315,22 +478,10 @@ const renderActionCloseOfficers = (members) => {
   actionCloseList.innerHTML = members.length
     ? members
         .map(
-          (member) =>
-            `<li><span>${member.id} ${member.name}</span><span>&check;</span></li>`
+          (member) => `<li><span>${member.id} ${member.name}</span><span>&check;</span></li>`
         )
         .join("")
     : "<li><span>No close gate officers</span><span>-</span></li>";
-};
-
-const setActionSummary = (details) => {
-  if (actionGate) actionGate.textContent = formatGateLabel(details.gate);
-  if (actionReporting) {
-    actionReporting.textContent = formatMinutesAsHrs(offsetTime(details.time, 0));
-  }
-  if (actionFlight) actionFlight.textContent = details.flight || "--";
-  if (actionOpening) {
-    actionOpening.textContent = formatMinutesAsHrs(offsetTime(details.time, 20));
-  }
 };
 
 const openActionModal = (mode) => {
@@ -363,9 +514,9 @@ const openActionModal = (mode) => {
     const teamMembers = pickRandomEntries(runnerTeamPool, 3);
     renderActionTeamMembers(teamMembers);
     if (actionTeamTitle) actionTeamTitle.textContent = "Team Members";
-    if (actionPrevGate) actionPrevGate.textContent = formatGateLabel(details.gate);
+    if (actionPrevGate) actionPrevGate.textContent = normalizeGateLabel(details.gate);
     if (actionPrevFlight) actionPrevFlight.textContent = details.flight || "-";
-    if (actionPrevEtd) actionPrevEtd.textContent = details.time || "-";
+    if (actionPrevEtd) actionPrevEtd.textContent = details.etd || "-";
     if (actionCloseList) actionCloseList.innerHTML = "";
   } else {
     renderActionCloseOfficers(pickRandomEntries(runnerClosePool, 2));
@@ -397,6 +548,7 @@ const openModal = (card) => {
   activeCard = card;
   const details = getCardDetails(card);
   setModalFields(details);
+  renderAssignedTeams(card);
   setModalRemarks(card);
   setModalSaveState(Boolean(getCardRemarks(card)));
   setModalCompleteState(card);
@@ -417,7 +569,40 @@ const closeModal = (resetActiveCard = true) => {
   }
 };
 
-document.querySelectorAll(".runner-card").forEach((card) => {
+const createRunnerCardElement = (flight, requiredTargets) => {
+  const card = document.createElement("article");
+  card.className = "runner-card";
+  card.dataset.status = flight.status;
+  card.dataset.flightId = flight.id;
+  card.dataset.remarks = flight.remarks || "";
+  card.dataset.time = formatHrsAsClock(flight.etd);
+  card.dataset.gate = flight.gate;
+  card.dataset.flight = flight.flightNo;
+  card.dataset.etd = flight.etd;
+
+  const routeLine = flight.route
+    ? `${flight.route} | FS ${flight.assignedFs}`
+    : `FS ${flight.assignedFs}`;
+
+  card.innerHTML = `
+    <div class="runner-left">
+      <div class="runner-time-block">${formatHrsAsClock(flight.etd)}</div>
+      <div class="runner-gate-label">GATE</div>
+      <div class="runner-gate">${normalizeGateCode(flight.gate)}</div>
+    </div>
+    <div class="runner-main">
+      <div class="runner-flight">${flight.flightNo}</div>
+      <div class="runner-route">${routeLine}</div>
+    </div>
+  `;
+
+  if (flight.status !== "completed" && requiredTargets?.pullId === flight.id) {
+    addRequiredMarker(card, "runner-pull-required", "Pull Team required");
+  }
+  if (flight.status !== "completed" && requiredTargets?.closeId === flight.id) {
+    addRequiredMarker(card, "runner-close-gate-required", "Close Gate required");
+  }
+
   card.classList.add("is-clickable");
   card.setAttribute("tabindex", "0");
   card.setAttribute("role", "button");
@@ -428,7 +613,47 @@ document.querySelectorAll(".runner-card").forEach((card) => {
       openModal(card);
     }
   });
-});
+
+  return card;
+};
+
+const renderFlightsToDevice = (device, flights, requiredTargets) => {
+  const list = device?.querySelector(".runner-list");
+  if (!list) return;
+  list.querySelectorAll(".runner-card").forEach((card) => card.remove());
+  flights.forEach((flight) => {
+    list.appendChild(createRunnerCardElement(flight, requiredTargets));
+  });
+  const controller = runnerDeviceControllers.get(device);
+  if (controller) {
+    controller.refreshCurrentTab();
+  }
+};
+
+const refreshRunnerBoards = () => {
+  const flights = getRunnerFlights();
+  const requiredTargets = getRequiredActionTargets(flights);
+
+  if (desktopDevices.length) {
+    const grouped = splitFlightsAcrossDevices(flights, desktopDevices.length);
+    desktopDevices.forEach((device, index) => {
+      renderFlightsToDevice(device, grouped[index] || [], requiredTargets);
+    });
+  }
+
+  if (mobileDevice) {
+    renderFlightsToDevice(mobileDevice, flights, requiredTargets);
+  }
+};
+
+const refreshRunnerClock = () => {
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, "0");
+  const minutes = now.getMinutes().toString().padStart(2, "0");
+  document
+    .querySelectorAll(".runner-time")
+    .forEach((clock) => (clock.textContent = `${hours}:${minutes}`));
+};
 
 if (modalClose) {
   modalClose.addEventListener("click", () => closeModal());
@@ -459,9 +684,10 @@ if (modalCompleteButton) {
     if (!activeCard || isCardCompleted(activeCard)) return;
     saveModalRemarksToCard();
     setModalSaveState(true);
-    const cardToComplete = activeCard;
-    moveCardToCompleted(cardToComplete);
+    const flightId = activeCard.dataset.flightId;
+    updateLiveFlight(flightId, (flight) => ({ ...flight, status: "completed" }));
     closeModal();
+    refreshRunnerBoards();
   });
 }
 
@@ -507,3 +733,13 @@ document.addEventListener("keydown", (event) => {
   }
   closeModal();
 });
+
+window.addEventListener("storage", (event) => {
+  if (event.key === STORAGE_KEY_LIVE_FLIGHTS) {
+    refreshRunnerBoards();
+  }
+});
+
+refreshRunnerClock();
+setInterval(refreshRunnerClock, 30000);
+refreshRunnerBoards();
