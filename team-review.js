@@ -9,6 +9,12 @@ const SHIFT_CONFIG = {
   Night: { start: 22 * 60, end: 34 * 60 },
 };
 
+const SHIFT_TIMING_LABELS = {
+  Morning: "1000hrs - 2200hrs",
+  Evening: "1300hrs - 0100hrs",
+  Night: "2200hrs - 1000hrs",
+};
+
 const AIRLINE_CODES = [
   "SQ",
   "NZ",
@@ -61,15 +67,14 @@ const filterShift = document.querySelector("#filter-shift");
 const filterTerminal = document.querySelector("#filter-terminal");
 const filterStatus = document.querySelector("#filter-status");
 const filterSearch = document.querySelector("#filter-search");
+const filterReset = document.querySelector("#filter-reset");
 
 const tableBody = document.querySelector("#officer-table-body");
 const emptyState = document.querySelector("#officer-empty");
 
-const kpiOnDuty = document.querySelector("#kpi-on-duty");
-const kpiActiveFlights = document.querySelector("#kpi-active-flights");
-const kpiCompletedFlights = document.querySelector("#kpi-completed-flights");
 const kpiAvgBreaks = document.querySelector("#kpi-avg-breaks");
 const kpiMissingBreak = document.querySelector("#kpi-missing-break");
+const kpiMissingBreakCard = document.querySelector("#kpi-missing-break-card");
 
 const drawer = document.querySelector("#officer-drawer");
 const drawerBackdrop = document.querySelector("#officer-drawer-backdrop");
@@ -174,6 +179,9 @@ const getShiftForIndex = (index) => {
   if (index % 3 === 1) return "Evening";
   return "Night";
 };
+
+const getShiftTimingLabel = (shift) =>
+  SHIFT_TIMING_LABELS[shift] || "0000hrs - 0000hrs";
 
 const getTerminalForOfficer = (index) => (index % 2 === 0 ? "A" : "B");
 
@@ -446,19 +454,14 @@ const getCurrentFlightLabel = (record) => {
 
 const renderKpis = (records) => {
   const onDuty = records.filter((record) => !record.absent).length;
-  const activeFlights = records.filter((record) => Boolean(record.currentFlight)).length;
-  const completedFlights = records.reduce(
-    (sum, record) => sum + record.flightsCompleted,
+  const totalFlights = records.reduce(
+    (sum, record) => sum + record.assignments.length,
     0
   );
-  const totalBreaks = records.reduce((sum, record) => sum + record.breakCount, 0);
-  const avgBreaks = onDuty > 0 ? (totalBreaks / onDuty).toFixed(1) : "0.0";
+  const avgFlightsPerOfficer = onDuty > 0 ? (totalFlights / onDuty).toFixed(1) : "0.0";
   const missingBreak = records.filter((record) => record.noBreakRisk).length;
 
-  if (kpiOnDuty) kpiOnDuty.textContent = String(onDuty);
-  if (kpiActiveFlights) kpiActiveFlights.textContent = String(activeFlights);
-  if (kpiCompletedFlights) kpiCompletedFlights.textContent = String(completedFlights);
-  if (kpiAvgBreaks) kpiAvgBreaks.textContent = avgBreaks;
+  if (kpiAvgBreaks) kpiAvgBreaks.textContent = avgFlightsPerOfficer;
   if (kpiMissingBreak) kpiMissingBreak.textContent = String(missingBreak);
 };
 
@@ -468,10 +471,7 @@ const buildStatusBadge = (record) =>
   )}</span>`;
 
 const buildRiskFlags = (record) => {
-  const flags = [];
-  if (record.noBreakRisk) flags.push("<span class=\"officer-flag warning\">No Break</span>");
-  if (!flags.length) return "";
-  return `<div class="officer-flag-row">${flags.join("")}</div>`;
+  return "";
 };
 
 const renderTableRows = (records) => {
@@ -490,7 +490,7 @@ const renderTableRows = (records) => {
       record.id
     )}" tabindex="0" role="button" aria-label="Open ${officerLabelSafe}">
       <td><div class="officer-cell-main">${officerLabelSafe}</div>${flags}</td>
-      <td>${escapeHtml(record.shift)}</td>
+      <td>${escapeHtml(getShiftTimingLabel(record.shift))}</td>
       <td>${currentFlight}</td>
       <td>${escapeHtml(record.flightsCompleted)}</td>
       <td>${breaksLabel}</td>
@@ -539,7 +539,7 @@ const openDrawer = (officerId) => {
     drawerOfficerName.textContent = `${record.id} ${record.name}`;
   }
   if (drawerOfficerMeta) {
-    drawerOfficerMeta.textContent = `${record.shift} Shift | Terminal ${record.terminal} | Status ${record.status}`;
+    drawerOfficerMeta.textContent = `Shift ${getShiftTimingLabel(record.shift)} | Terminal ${record.terminal} | Status ${record.status}`;
   }
   if (drawerCurrentFlight) {
     drawerCurrentFlight.textContent = getCurrentFlightLabel(record);
@@ -624,6 +624,40 @@ const applyFilters = () => {
 
   renderKpis(filteredOfficerRecords);
   renderTableRows(filteredOfficerRecords);
+  syncNoBreakShortcutState();
+};
+
+const applyNoBreakFilterShortcut = () => {
+  if (!filterStatus) return;
+  const isNoBreakActive = normalizeLabel(filterStatus.value) === "No Break";
+  filterStatus.value = isNoBreakActive ? "all" : "No Break";
+  applyFilters();
+};
+
+const resetFilters = () => {
+  if (filterDate) {
+    filterDate.value = getLocalDateString();
+  }
+  if (filterShift) {
+    filterShift.value = "all";
+  }
+  if (filterTerminal) {
+    filterTerminal.value = "all";
+  }
+  if (filterStatus) {
+    filterStatus.value = "all";
+  }
+  if (filterSearch) {
+    filterSearch.value = "";
+  }
+  rebuildData();
+};
+
+const syncNoBreakShortcutState = () => {
+  if (!kpiMissingBreakCard || !filterStatus) return;
+  const isActive = normalizeLabel(filterStatus.value) === "No Break";
+  kpiMissingBreakCard.classList.toggle("is-active", isActive);
+  kpiMissingBreakCard.setAttribute("aria-pressed", isActive ? "true" : "false");
 };
 
 const rebuildData = () => {
@@ -647,6 +681,19 @@ const bindEvents = () => {
 
   if (filterSearch) {
     filterSearch.addEventListener("input", applyFilters);
+  }
+
+  if (filterReset) {
+    filterReset.addEventListener("click", resetFilters);
+  }
+
+  if (kpiMissingBreakCard) {
+    kpiMissingBreakCard.addEventListener("click", applyNoBreakFilterShortcut);
+    kpiMissingBreakCard.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      applyNoBreakFilterShortcut();
+    });
   }
 
   if (tableBody) {
@@ -690,6 +737,7 @@ const initializeFilters = () => {
   if (filterDate && !filterDate.value) {
     filterDate.value = getLocalDateString();
   }
+  syncNoBreakShortcutState();
 };
 
 document.addEventListener("DOMContentLoaded", () => {

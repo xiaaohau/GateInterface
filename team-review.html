@@ -33,22 +33,17 @@
           <h2 class="section-title">Operations KPIs <span>- Live Officer Oversight</span></h2>
           <div class="officer-kpi-grid">
             <article class="officer-kpi-card">
-              <div class="officer-kpi-label">On Duty</div>
-              <div class="officer-kpi-value" id="kpi-on-duty">0</div>
-            </article>
-            <article class="officer-kpi-card">
-              <div class="officer-kpi-label">Active Flights</div>
-              <div class="officer-kpi-value" id="kpi-active-flights">0</div>
-            </article>
-            <article class="officer-kpi-card">
-              <div class="officer-kpi-label">Completed Flights</div>
-              <div class="officer-kpi-value" id="kpi-completed-flights">0</div>
-            </article>
-            <article class="officer-kpi-card">
-              <div class="officer-kpi-label">Avg Breaks / Officer</div>
+              <div class="officer-kpi-label">Average Flights / Officer</div>
               <div class="officer-kpi-value" id="kpi-avg-breaks">0.0</div>
             </article>
-            <article class="officer-kpi-card warning">
+            <article
+              class="officer-kpi-card warning officer-kpi-clickable"
+              id="kpi-missing-break-card"
+              role="button"
+              tabindex="0"
+              aria-pressed="false"
+              aria-label="Filter officers with no break status"
+            >
               <div class="officer-kpi-label">Officers Missing Break</div>
               <div class="officer-kpi-value" id="kpi-missing-break">0</div>
             </article>
@@ -97,6 +92,11 @@
                 autocomplete="off"
               />
             </label>
+            <div class="officer-filter-actions">
+              <button type="button" class="officer-filter-reset" id="filter-reset">
+                Reset Filters
+              </button>
+            </div>
           </div>
         </section>
 
