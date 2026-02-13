@@ -126,12 +126,159 @@ const ensureGateActionsContainer = (card) => {
   return actions;
 };
 
+const ensureCardHasPullAndCloseActions = (card) => {
+  const actions = ensureGateActionsContainer(card);
+  if (!actions) return;
+
+  let close = actions.querySelector(".close-gate");
+  let pull = actions.querySelector(".pull-team");
+
+  if (!pull) {
+    pull = document.createElement("button");
+    pull.type = "button";
+    pull.className = "pull-team";
+    pull.setAttribute("aria-label", "Pull Team");
+    pull.setAttribute("data-label", "Pull Team");
+    pull.innerHTML = PULL_TEAM_ICON;
+    if (close) {
+      actions.insertBefore(pull, close);
+    } else {
+      actions.appendChild(pull);
+    }
+  }
+
+  if (!close) {
+    close = document.createElement("button");
+    close.type = "button";
+    close.className = "close-gate";
+    close.setAttribute("aria-label", "Close Gate");
+    close.setAttribute("data-label", "Close Gate");
+    close.innerHTML = CLOSE_GATE_ICON;
+    actions.appendChild(close);
+  }
+};
+
+const parseActionFlag = (value) => value === true || value === "true";
+
+const getCardPullCloseState = (card) => {
+  if (!card) {
+    return {
+      pullRequired: false,
+      closeRequired: false,
+      pullCompleted: false,
+      closeCompleted: false,
+    };
+  }
+  const pullButton = card.querySelector(".pull-team");
+  const closeButton = card.querySelector(".close-gate");
+  const pullState = String(pullButton?.dataset.state || "").toLowerCase();
+  const closeState = String(closeButton?.dataset.state || "").toLowerCase();
+  const pullCompleted =
+    parseActionFlag(card.dataset.pullCompleted) ||
+    pullButton?.classList.contains("is-completed") ||
+    pullState === "completed";
+  const closeCompleted =
+    parseActionFlag(card.dataset.closeCompleted) ||
+    closeButton?.classList.contains("is-completed") ||
+    closeState === "completed";
+  const pullRequired =
+    parseActionFlag(card.dataset.pullRequired) ||
+    pullState === "required" ||
+    pullCompleted;
+  const closeRequired =
+    parseActionFlag(card.dataset.closeRequired) ||
+    closeState === "required" ||
+    closeCompleted;
+  return {
+    pullRequired,
+    closeRequired,
+    pullCompleted,
+    closeCompleted,
+  };
+};
+
+const applyPullCloseStateToCard = (card, state = {}) => {
+  if (!card) return;
+  const pullRequired = parseActionFlag(state.pullRequired) || parseActionFlag(state.pullCompleted);
+  const closeRequired =
+    parseActionFlag(state.closeRequired) || parseActionFlag(state.closeCompleted);
+  const pullCompleted = parseActionFlag(state.pullCompleted);
+  const closeCompleted = parseActionFlag(state.closeCompleted);
+  card.dataset.pullRequired = pullRequired ? "true" : "false";
+  card.dataset.closeRequired = closeRequired ? "true" : "false";
+  card.dataset.pullCompleted = pullCompleted ? "true" : "false";
+  card.dataset.closeCompleted = closeCompleted ? "true" : "false";
+  const actions = ensureGateActionsContainer(card);
+  if (!actions) return;
+
+  let pullButton = actions.querySelector(".pull-team");
+  let closeButton = actions.querySelector(".close-gate");
+
+  const shouldShowPull = pullRequired || pullCompleted;
+  const shouldShowClose = closeRequired || closeCompleted;
+
+  if (shouldShowPull && !pullButton) {
+    pullButton = document.createElement("button");
+    pullButton.type = "button";
+    pullButton.className = "pull-team";
+    pullButton.setAttribute("aria-label", "Pull Team");
+    pullButton.innerHTML = PULL_TEAM_ICON;
+    if (closeButton) {
+      actions.insertBefore(pullButton, closeButton);
+    } else {
+      actions.appendChild(pullButton);
+    }
+  }
+  if (!shouldShowPull && pullButton) {
+    pullButton.remove();
+    pullButton = null;
+  }
+
+  if (shouldShowClose && !closeButton) {
+    closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "close-gate";
+    closeButton.setAttribute("aria-label", "Close Gate");
+    closeButton.innerHTML = CLOSE_GATE_ICON;
+    actions.appendChild(closeButton);
+  }
+  if (!shouldShowClose && closeButton) {
+    closeButton.remove();
+    closeButton = null;
+  }
+
+  if (pullButton) {
+    pullButton.classList.toggle("is-completed", pullCompleted);
+    pullButton.dataset.state = pullCompleted ? "completed" : "required";
+    pullButton.setAttribute(
+      "data-label",
+      pullCompleted ? "Pull Team Completed" : "Pull Team"
+    );
+  }
+  if (closeButton) {
+    closeButton.classList.toggle("is-completed", closeCompleted);
+    closeButton.dataset.state = closeCompleted ? "completed" : "required";
+    closeButton.setAttribute(
+      "data-label",
+      closeCompleted ? "Gate Closed" : "Close Gate"
+    );
+  }
+
+  card.classList.toggle("has-pull", shouldShowPull || shouldShowClose);
+};
+
 const updatePullCount = () => {
   const countEl = document.querySelector("#pull-count");
   if (!countEl) return;
-  const count = getVisibleInProgressCards().filter((card) =>
-    card.querySelector(".pull-team")
-  ).length;
+  const count = getVisibleInProgressCards().filter((card) => {
+    const state = getCardPullCloseState(card);
+    return (
+      state.pullRequired ||
+      state.closeRequired ||
+      state.pullCompleted ||
+      state.closeCompleted
+    );
+  }).length;
   countEl.textContent = String(count);
 };
 
@@ -155,7 +302,10 @@ const updateEnhancedCount = () => {
 
 const isPatdownCard = (card) => {
   if (!card) return false;
-  return Boolean(card.querySelector(".badge-patdown"));
+  return (
+    card.classList.contains("patdown-gate") ||
+    Boolean(card.querySelector(".badge-patdown"))
+  );
 };
 
 const updatePatdownCount = () => {
@@ -274,11 +424,14 @@ const applySinglePatdownAlert = () => {
     return;
   }
   const candidates = getFsAlertCandidateCards();
-  const target = pickPreferredAlertCard(
-    candidates,
-    (card) =>
-      card.dataset.patdownAlert === "true" || Boolean(card.querySelector(".badge-patdown"))
-  );
+  const target =
+    candidates.find((card) => card.classList.contains("status-delayed")) ||
+    candidates.find(
+      (card) =>
+        card.dataset.patdownAlert === "true" || Boolean(card.querySelector(".badge-patdown"))
+    ) ||
+    candidates[Math.floor(Math.random() * candidates.length)] ||
+    null;
 
   cards.forEach((card) => {
     card.dataset.patdownAlert = "false";
@@ -308,42 +461,44 @@ const applySinglePullAlert = () => {
     updatePullCount();
     return;
   }
-
   const candidates = getFsAlertCandidateCards();
-  const target = pickPreferredAlertCard(
-    candidates,
-    (card) => card.dataset.pullAlert === "true" || Boolean(card.querySelector(".pull-team"))
-  );
+  const pool = candidates.length ? candidates : cards;
+  const bothCard = pool[0] || null;
+  const pullOnlyCard = pool.length >= 3 ? pool[1] : pool.length === 2 ? pool[1] : null;
+  const closeOnlyCard = pool.length >= 3 ? pool[2] : null;
+
+  const actionMap = new Map();
+  const assignState = (card, next) => {
+    if (!card) return;
+    const existing = actionMap.get(card) || {
+      pullRequired: false,
+      closeRequired: false,
+    };
+    actionMap.set(card, {
+      pullRequired: existing.pullRequired || Boolean(next.pullRequired),
+      closeRequired: existing.closeRequired || Boolean(next.closeRequired),
+    });
+  };
+
+  assignState(bothCard, { pullRequired: true, closeRequired: true });
+  assignState(pullOnlyCard, { pullRequired: true, closeRequired: false });
+  assignState(closeOnlyCard, { pullRequired: false, closeRequired: true });
 
   cards.forEach((card) => {
-    card.dataset.pullAlert = "false";
-    card.querySelectorAll(".pull-team, .close-gate").forEach((badge) => badge.remove());
-    card.classList.remove("has-pull");
+    const targetState = actionMap.get(card) || {
+      pullRequired: false,
+      closeRequired: false,
+    };
+    const existing = getCardPullCloseState(card);
+    applyPullCloseStateToCard(card, {
+      pullRequired: targetState.pullRequired,
+      closeRequired: targetState.closeRequired,
+      pullCompleted: targetState.pullRequired ? existing.pullCompleted : false,
+      closeCompleted: targetState.closeRequired ? existing.closeCompleted : false,
+    });
+    card.dataset.pullAlert =
+      targetState.pullRequired || targetState.closeRequired ? "true" : "false";
   });
-
-  if (target) {
-    const actions = ensureGateActionsContainer(target);
-    if (actions) {
-      const pull = document.createElement("button");
-      pull.type = "button";
-      pull.className = "pull-team";
-      pull.setAttribute("aria-label", "Pull Team");
-      pull.setAttribute("data-label", "Pull Team");
-      pull.innerHTML = PULL_TEAM_ICON;
-
-      const close = document.createElement("button");
-      close.type = "button";
-      close.className = "close-gate";
-      close.setAttribute("aria-label", "Close Gate");
-      close.setAttribute("data-label", "Close Gate");
-      close.innerHTML = CLOSE_GATE_ICON;
-
-      actions.appendChild(pull);
-      actions.appendChild(close);
-      target.classList.add("has-pull");
-      target.dataset.pullAlert = "true";
-    }
-  }
 
   updatePullCount();
   syncLiveFlightsFromPage();
@@ -509,7 +664,13 @@ const enablePullFilter = () => {
   if (!tile) return;
 
   getInProgressCards().forEach((card) => {
-    if (card.querySelector(".pull-team")) {
+    const state = getCardPullCloseState(card);
+    if (
+      state.pullRequired ||
+      state.closeRequired ||
+      state.pullCompleted ||
+      state.closeCompleted
+    ) {
       card.classList.add("has-pull");
     } else {
       card.classList.remove("has-pull");
@@ -1009,7 +1170,9 @@ document.addEventListener("DOMContentLoaded", () => {
   enableTeamsToggle();
   setupHistoryModal();
   syncLiveFlightsFromPage();
+  applyLiveFlightActionsToPage();
   movePastEtdToHistory();
+  applyLiveFlightActionsToPage();
   syncLiveFlightsFromPage();
   setInterval(movePastEtdToHistory, 60000);
 });
@@ -1052,6 +1215,22 @@ const setupHistoryModal = () => {
   trigger.addEventListener("click", openHistoryModal);
   historyClose.addEventListener("click", closeHistoryModal);
   historyBackdrop.addEventListener("click", closeHistoryModal);
+  if (historyModalGrid) {
+    historyModalGrid.addEventListener("click", (event) => {
+      if (event.target.closest(".pull-team, .close-gate")) return;
+      const card = event.target.closest(".flight-card");
+      if (!card) return;
+      openAssignedTeamsModal(card);
+    });
+    historyModalGrid.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      if (event.target.closest(".pull-team, .close-gate")) return;
+      const card = event.target.closest(".flight-card.is-pressable");
+      if (!card) return;
+      event.preventDefault();
+      openAssignedTeamsModal(card);
+    });
+  }
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && historyModal.classList.contains("is-visible")) {
       closeHistoryModal();
@@ -1159,6 +1338,14 @@ const modalPrevEtd = modalPreviousBlock
 const modalSummary = document.querySelector(".modal-summary");
 const modalAction = modal ? modal.querySelector(".modal-action") : null;
 const modalTeamTitle = modalTeamBlock ? modalTeamBlock.querySelector("div") : null;
+const modalAssignedRemarksPanel = modal
+  ? modal.querySelector(".modal-remarks-panel")
+  : null;
+const modalAssignedRemarksInput = document.querySelector("#modal-assigned-remarks");
+const modalAssignedSaveRow = modal ? modal.querySelector(".modal-save-row") : null;
+const modalAssignedSave = document.querySelector("#modal-assigned-save");
+const modalAssignedCompleteRow = modal ? modal.querySelector(".modal-complete-row") : null;
+const modalAssignedComplete = document.querySelector("#modal-assigned-complete");
 const historyModal = document.querySelector(".history-modal");
 const historyBackdrop = document.querySelector(".history-backdrop");
 const historyClose = document.querySelector(".history-close");
@@ -1182,6 +1369,7 @@ const ASSIGNED_SUMMARY_LABELS = [
 ];
 let modalTeams = [];
 let modalActiveTeamIndex = 0;
+let modalAssignedFlightId = "";
 const assignList = document.querySelector("#assign-gate-list");
 const assignFs = document.querySelector("#assign-fs");
 const assignSubmit = document.querySelector("#assign-submit");
@@ -1291,6 +1479,52 @@ const writeLiveFlightsToStorage = (flights) => {
   } catch (error) {
     // Ignore storage errors.
   }
+};
+
+const updateLiveFlightById = (flightId, updater) => {
+  const normalizedId = normalizeStorageLabel(flightId);
+  if (!normalizedId || typeof updater !== "function") return null;
+  const flights = readLiveFlightsFromStorage();
+  const index = flights.findIndex(
+    (flight) => normalizeStorageLabel(flight?.id) === normalizedId
+  );
+  if (index === -1) return null;
+  const current = flights[index] || {};
+  const next = updater(current);
+  if (!next || typeof next !== "object") return null;
+  flights[index] = next;
+  writeLiveFlightsToStorage(flights);
+  return next;
+};
+
+const setLiveFlightActionCompleted = (flightId, actionType) => {
+  const normalizedId = normalizeStorageLabel(flightId);
+  if (!normalizedId || (actionType !== "pull" && actionType !== "close")) {
+    return false;
+  }
+  const flights = readLiveFlightsFromStorage();
+  const index = flights.findIndex(
+    (flight) => normalizeStorageLabel(flight?.id) === normalizedId
+  );
+  if (index === -1) return false;
+  const current = flights[index] || {};
+  const next = {
+    ...current,
+    pullRequired: parseActionFlag(current.pullRequired),
+    closeRequired: parseActionFlag(current.closeRequired),
+    pullCompleted: parseActionFlag(current.pullCompleted),
+    closeCompleted: parseActionFlag(current.closeCompleted),
+  };
+  if (actionType === "pull") {
+    next.pullRequired = true;
+    next.pullCompleted = true;
+  } else {
+    next.closeRequired = true;
+    next.closeCompleted = true;
+  }
+  flights[index] = next;
+  writeLiveFlightsToStorage(flights);
+  return true;
 };
 
 const normalizeAssignmentRef = (value) => normalizeStorageLabel(value);
@@ -1433,6 +1667,7 @@ const collectLiveFlightsFromPage = () => {
       isInHistory || card.classList.contains("history-card") || stored?.status === "completed"
         ? "completed"
         : "assigned";
+    const cardActionState = getCardPullCloseState(card);
 
     return {
       id,
@@ -1446,6 +1681,10 @@ const collectLiveFlightsFromPage = () => {
       assignedFs: getAssignedFsFromCard(card, id, assigneeMap),
       status,
       remarks: normalizeStorageLabel(card.dataset.remarks || ""),
+      pullRequired: cardActionState.pullRequired,
+      closeRequired: cardActionState.closeRequired,
+      pullCompleted: cardActionState.pullCompleted,
+      closeCompleted: cardActionState.closeCompleted,
     };
   });
 };
@@ -1495,6 +1734,45 @@ const applyLiveFlightStatusesToPage = () => {
     }
   });
 
+  if (historyModal && historyModal.classList.contains("is-visible")) {
+    renderHistoryCards();
+  }
+};
+
+const applyLiveFlightActionsToPage = () => {
+  const page = document.querySelector(".in-progress-page");
+  const historyGrid = document.querySelector("#history-grid");
+  if (!page) return;
+
+  const actionById = new Map(
+    readLiveFlightsFromStorage()
+      .filter((flight) => flight && typeof flight === "object" && flight.id)
+      .map((flight) => [
+        normalizeStorageLabel(flight.id),
+        {
+          pullRequired: parseActionFlag(flight.pullRequired),
+          closeRequired: parseActionFlag(flight.closeRequired),
+          pullCompleted: parseActionFlag(flight.pullCompleted),
+          closeCompleted: parseActionFlag(flight.closeCompleted),
+        },
+      ])
+  );
+
+  const cards = Array.from(
+    new Set([
+      ...Array.from(page.querySelectorAll(".flight-card")),
+      ...(historyGrid ? Array.from(historyGrid.querySelectorAll(".flight-card")) : []),
+    ])
+  );
+
+  cards.forEach((card, index) => {
+    const id = getCardStorageFlightId(card, index);
+    const actionState = actionById.get(id);
+    if (!actionState) return;
+    applyPullCloseStateToCard(card, actionState);
+  });
+
+  updatePullCount();
   if (historyModal && historyModal.classList.contains("is-visible")) {
     renderHistoryCards();
   }
@@ -1657,7 +1935,9 @@ window.addEventListener("storage", (event) => {
   }
   if (event.key === STORAGE_KEYS.liveFlights) {
     applyLiveFlightStatusesToPage();
+    applyLiveFlightActionsToPage();
     applyRtWindowFilter();
+    applyLiveFlightActionsToPage();
     if (assignList) {
       populateAssignGates();
     }
@@ -1790,6 +2070,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateGotTimes();
   updateRtGotForInProgress();
   syncLiveFlightsFromPage();
+  applyLiveFlightActionsToPage();
   setTimeout(sortInProgressByRT, 0);
 });
 
@@ -1968,11 +2249,52 @@ if (modalTeamTabs) {
   });
 }
 
+const setAssignedModalControlsVisible = (isVisible) => {
+  if (modalAssignedRemarksPanel) {
+    modalAssignedRemarksPanel.classList.toggle("is-hidden", !isVisible);
+    modalAssignedRemarksPanel.style.display = isVisible ? "" : "none";
+  }
+  if (modalAssignedSaveRow) {
+    modalAssignedSaveRow.classList.toggle("is-hidden", !isVisible);
+    modalAssignedSaveRow.style.display = isVisible ? "" : "none";
+  }
+  if (modalAssignedCompleteRow) {
+    modalAssignedCompleteRow.classList.toggle("is-hidden", !isVisible);
+    modalAssignedCompleteRow.style.display = isVisible ? "" : "none";
+  }
+};
+
+const setAssignedModalCompleteState = (isCompleted) => {
+  if (!modalAssignedComplete) return;
+  modalAssignedComplete.classList.toggle("is-completed", isCompleted);
+  modalAssignedComplete.disabled = isCompleted;
+  modalAssignedComplete.textContent = isCompleted ? "Completed" : "Complete";
+};
+
+const setAssignedModalSaveState = (saved) => {
+  if (!modalAssignedSave) return;
+  modalAssignedSave.classList.toggle("is-saved", saved);
+  modalAssignedSave.textContent = saved ? "Remarks Saved" : "Save Remarks";
+};
+
+const getLiveFlightById = (flightId) => {
+  const normalizedId = normalizeStorageLabel(flightId);
+  if (!normalizedId) return null;
+  return (
+    readLiveFlightsFromStorage().find(
+      (flight) => normalizeStorageLabel(flight?.id) === normalizedId
+    ) || null
+  );
+};
+
 const setModalLayoutForAction = () => {
   if (modalSummary) modalSummary.classList.remove("is-hidden");
   if (modalAction) modalAction.classList.remove("is-hidden");
   if (modalTeamTitle) modalTeamTitle.textContent = "Team Members";
   setModalSummaryLabels(DEFAULT_SUMMARY_LABELS);
+  setAssignedModalControlsVisible(false);
+  setAssignedModalSaveState(false);
+  modalAssignedFlightId = "";
 };
 
 const setModalLayoutForAssigned = () => {
@@ -1982,6 +2304,7 @@ const setModalLayoutForAssigned = () => {
   if (modalTeamTitle) modalTeamTitle.textContent = "Assigned Teams";
   setModalSummaryLabels(ASSIGNED_SUMMARY_LABELS);
   clearModalTeams();
+  setAssignedModalControlsVisible(true);
 };
 
 const openModal = (data) => {
@@ -2031,6 +2354,25 @@ const openAssignedTeamsModal = (card) => {
   setModalLayoutForAssigned();
   if (modalAction) modalAction.classList.add("is-hidden");
   if (modalTitle) modalTitle.textContent = "Assigned Teams";
+  modalAssignedFlightId = normalizeStorageLabel(getCardStorageFlightId(card));
+  const liveFlight = getLiveFlightById(modalAssignedFlightId);
+  const isCompleted =
+    String(liveFlight?.status || "").toLowerCase() === "completed" ||
+    card.classList.contains("history-card");
+  const remarksValue = normalizeRemarkValue(
+    liveFlight?.remarks || getExistingRemarkForCard(card)
+  );
+  if (modalAssignedRemarksInput) {
+    modalAssignedRemarksInput.value = remarksValue;
+  }
+  setAssignedModalSaveState(true);
+  setAssignedModalCompleteState(isCompleted);
+  if (modalAssignedSave) {
+    modalAssignedSave.dataset.flightId = modalAssignedFlightId;
+  }
+  if (modalAssignedComplete) {
+    modalAssignedComplete.dataset.flightId = modalAssignedFlightId;
+  }
 
   const gateCode = getFlightCardGateCode(card);
   const gateEl = card.querySelector(".gate-label");
@@ -2311,10 +2653,9 @@ const renderHistoryCards = () => {
   historyModalGrid.innerHTML = "";
   cards.forEach((card) => {
     const clone = card.cloneNode(true);
-    clone.classList.remove("is-pressable");
-    clone.removeAttribute("tabindex");
-    clone.removeAttribute("role");
-    clone.removeAttribute("aria-label");
+    clone.querySelectorAll(".edit-flight").forEach((btn) => btn.remove());
+    setCardPressable(clone);
+    applyPullCloseStateToCard(clone, getCardPullCloseState(clone));
     historyModalGrid.appendChild(clone);
   });
 };
@@ -2380,7 +2721,9 @@ const movePastEtdToHistory = () => {
   const historyGrid = document.querySelector("#history-grid");
   if (!page || !historyGrid) return;
   applyLiveFlightStatusesToPage();
+  applyLiveFlightActionsToPage();
   applyRtWindowFilter();
+  applyLiveFlightActionsToPage();
   syncLiveFlightsFromPage();
   if (historyModal && historyModal.classList.contains("is-visible")) {
     renderHistoryCards();
@@ -2468,6 +2811,50 @@ const closeModal = () => {
   if (!modal || !modalBackdrop) return;
   modalBackdrop.classList.remove("is-visible");
   modal.classList.remove("is-visible");
+  modalAssignedFlightId = "";
+  setAssignedModalSaveState(false);
+  if (modalAssignedSave) {
+    modalAssignedSave.dataset.flightId = "";
+  }
+  if (modalAssignedComplete) {
+    modalAssignedComplete.dataset.flightId = "";
+  }
+};
+
+const applyRemarksToFlightCardsById = (flightId, remarks) => {
+  const normalizedFlightId = normalizeStorageLabel(flightId);
+  if (!normalizedFlightId) return;
+  const page = document.querySelector(".in-progress-page");
+  const historyGrid = document.querySelector("#history-grid");
+  const cards = Array.from(
+    new Set([
+      ...(page ? Array.from(page.querySelectorAll(".flight-card")) : []),
+      ...(historyGrid ? Array.from(historyGrid.querySelectorAll(".flight-card")) : []),
+    ])
+  );
+  cards.forEach((card, index) => {
+    if (normalizeStorageLabel(getCardStorageFlightId(card, index)) !== normalizedFlightId) return;
+    card.dataset.remarks = remarks;
+  });
+};
+
+const saveAssignedRemarks = (flightId) => {
+  const normalizedFlightId = normalizeStorageLabel(flightId);
+  if (!normalizedFlightId) return false;
+  const remarks = normalizeRemarkValue(modalAssignedRemarksInput?.value || "");
+  const updated = updateLiveFlightById(normalizedFlightId, (flight) => ({
+    ...flight,
+    remarks,
+  }));
+  if (!updated) return false;
+  applyRemarksToFlightCardsById(normalizedFlightId, remarks);
+  applyRemarksToCards();
+  syncLiveFlightsFromPage();
+  if (historyModal && historyModal.classList.contains("is-visible")) {
+    renderHistoryCards();
+  }
+  setAssignedModalSaveState(true);
+  return true;
 };
 
 document.addEventListener("click", (event) => {
@@ -2476,6 +2863,7 @@ document.addEventListener("click", (event) => {
   const badge = pull || close;
   if (!badge) return;
   const card = badge.closest(".flight-card");
+  if (!card) return;
   const banner = badge.closest(".gate-banner");
   const gateText = banner ? banner.textContent.replace("PULL TEAM", "").trim() : "Gate";
   const flightEl = card ? card.querySelector(".flight-tag") : null;
@@ -2495,9 +2883,16 @@ document.addEventListener("click", (event) => {
   const closeOfficers = close ? pickCloseOfficers() : [];
   const isPatdown = pull ? Boolean(card && card.querySelector(".badge-patdown")) : false;
   const actionLabel = pull ? "Pull Team Completed" : "Gate Closed";
+  const actionType = pull ? "pull" : "close";
+  const flightId = card ? getCardStorageFlightId(card) : "";
   const previousFlight = pull
     ? { gate: gateText, flightNo, etd: etdText }
     : null;
+
+  if (modalAction) {
+    modalAction.dataset.actionType = actionType;
+    modalAction.dataset.flightId = flightId;
+  }
 
   openModal({
     title: pull ? "Pull Team Officers" : "Close Gate Officers",
@@ -2526,8 +2921,81 @@ if (modalBackdrop) {
   modalBackdrop.addEventListener("click", closeModal);
 }
 
+if (modalAction) {
+  modalAction.addEventListener("click", () => {
+    const actionType = String(modalAction.dataset.actionType || "").trim();
+    const flightId = normalizeStorageLabel(modalAction.dataset.flightId || "");
+    if (!flightId || (actionType !== "pull" && actionType !== "close")) return;
+    const changed = setLiveFlightActionCompleted(flightId, actionType);
+    if (!changed) return;
+
+    const cards = Array.from(document.querySelectorAll(".flight-card")).filter(
+      (card, index) => getCardStorageFlightId(card, index) === flightId
+    );
+    cards.forEach((card) => {
+      const existing = getCardPullCloseState(card);
+      applyPullCloseStateToCard(card, {
+        pullRequired: existing.pullRequired || actionType === "pull",
+        closeRequired: existing.closeRequired || actionType === "close",
+        pullCompleted: existing.pullCompleted || actionType === "pull",
+        closeCompleted: existing.closeCompleted || actionType === "close",
+      });
+    });
+
+    applyLiveFlightActionsToPage();
+    syncLiveFlightsFromPage();
+  });
+}
+
+if (modalAssignedSave) {
+  modalAssignedSave.addEventListener("click", () => {
+    const flightId = normalizeStorageLabel(
+      modalAssignedSave.dataset.flightId || modalAssignedFlightId
+    );
+    if (!flightId) return;
+    saveAssignedRemarks(flightId);
+  });
+}
+
+if (modalAssignedRemarksInput) {
+  modalAssignedRemarksInput.addEventListener("input", () => {
+    if (!modalAssignedFlightId) return;
+    setAssignedModalSaveState(false);
+  });
+}
+
+if (modalAssignedComplete) {
+  modalAssignedComplete.addEventListener("click", () => {
+    const flightId = normalizeStorageLabel(
+      modalAssignedComplete.dataset.flightId || modalAssignedFlightId
+    );
+    if (!flightId) return;
+
+    const remarks = normalizeRemarkValue(modalAssignedRemarksInput?.value || "");
+    const updated = updateLiveFlightById(flightId, (flight) => ({
+      ...flight,
+      remarks,
+      status: "completed",
+    }));
+    if (!updated) return;
+    applyRemarksToFlightCardsById(flightId, remarks);
+    applyRemarksToCards();
+    setAssignedModalSaveState(true);
+    applyLiveFlightStatusesToPage();
+    applyLiveFlightActionsToPage();
+    syncLiveFlightsFromPage();
+    closeModal();
+  });
+}
+
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeModal();
+  if (event.key !== "Escape") return;
+  if (modal && modal.classList.contains("is-visible")) {
+    closeModal();
+    event.stopImmediatePropagation();
+    return;
+  }
+  closeModal();
 });
 
 const defaultGates = ALLOWED_GATE_CODES.slice();
@@ -2579,6 +3047,26 @@ const getGateTimes = () => {
 const populateAssignGates = () => {
   if (!assignList) return;
   const activeFlights = getActiveLiveFlights();
+  const getRtForAssignRow = (flight) => {
+    const storedRt = normalizeStorageTime(flight?.rt);
+    if (storedRt && storedRt !== "-") return storedRt;
+    const rtMinutes = getLiveFlightRtMinutes(flight);
+    if (Number.isFinite(rtMinutes)) {
+      return formatTime(Math.floor(rtMinutes / 60), rtMinutes % 60);
+    }
+    const etd = normalizeStorageTime(flight?.etd);
+    if (etd && etd !== "-") {
+      const derived = subtractMinutes(etd, 90);
+      if (derived && derived !== "-") return derived;
+    }
+    return "-";
+  };
+  const assignedRefs = new Set(
+    Object.values(assignments)
+      .flatMap((refs) => (Array.isArray(refs) ? refs : []))
+      .map((ref) => normalizeAssignmentRef(ref))
+      .filter(Boolean)
+  );
   const liveFlights = getWindowedActiveLiveFlights()
     .map((flight, index) => {
       const gateCode =
@@ -2595,10 +3083,15 @@ const populateAssignGates = () => {
         ref: flightRef,
         gate: `Gate ${gateCode}`,
         flightNo: normalizeStorageFlightNumber(flight.flightNo || "-"),
-        etd: normalizeStorageTime(flight.etd),
+        rt: getRtForAssignRow(flight),
       };
     })
-    .filter((flight) => flight.ref && flight.gate !== "Gate --");
+    .filter(
+      (flight) =>
+        flight.ref &&
+        flight.gate !== "Gate --" &&
+        !assignedRefs.has(normalizeAssignmentRef(flight.ref))
+    );
 
   if (liveFlights.length) {
     assignList.innerHTML = liveFlights
@@ -2606,7 +3099,7 @@ const populateAssignGates = () => {
         (flight) => `<button class="assign-gate" type="button" data-gate="${flight.gate}" data-flight-ref="${flight.ref}">
         <span class="assign-gate-label">${flight.gate}</span>
         <span class="assign-gate-time">Flight ${flight.flightNo}</span>
-        <span class="assign-gate-time">ETD ${flight.etd}</span>
+        <span class="assign-gate-time">RT ${flight.rt}</span>
       </button>`
       )
       .join("");
@@ -2615,7 +3108,7 @@ const populateAssignGates = () => {
 
   if (activeFlights.length > 0) {
     assignList.innerHTML =
-      "<div class=\"assign-row\"><span>No flights within RT current time + 90 mins</span><span>-</span></div>";
+      "<div class=\"assign-row\"><span>No unassigned flights within RT current time + 90 mins</span><span>-</span></div>";
     return;
   }
 
@@ -2623,11 +3116,13 @@ const populateAssignGates = () => {
   assignList.innerHTML = defaultGates
     .map((gate) => {
       const gateLabel = `Gate ${gate}`;
-      const time = gateTimes[gateLabel] || "--:--";
+      const etdTime = normalizeStorageTime(gateTimes[gateLabel]);
+      const rtTime =
+        etdTime && etdTime !== "-" ? subtractMinutes(etdTime, 90) : "-";
       return `<button class="assign-gate" type="button" data-gate="${gateLabel}">
         <span class="assign-gate-label">${gateLabel}</span>
         <span class="assign-gate-time">Flight -</span>
-        <span class="assign-gate-time">ETD ${time}</span>
+        <span class="assign-gate-time">RT ${rtTime === "-" ? "--" : rtTime}</span>
       </button>`;
     })
     .join("");
@@ -2686,6 +3181,14 @@ if (assignSubmit) {
 }
 
 if (assignSummary) {
+  const formatRtForTimeline = (flight) => {
+    const storedRt = normalizeStorageTime(flight?.rt);
+    if (storedRt && storedRt !== "-") return storedRt;
+    const rtMinutes = getLiveFlightRtMinutes(flight);
+    if (!Number.isFinite(rtMinutes)) return "-";
+    return formatTime(Math.floor(rtMinutes / 60), rtMinutes % 60);
+  };
+
   const renderTimeline = () => {
     const liveFlightMap = new Map(
       readLiveFlightsFromStorage()
@@ -2694,68 +3197,41 @@ if (assignSummary) {
     );
 
     const rows = Object.entries(assignments).map(([fs, refs]) => {
-      const times = (Array.isArray(refs) ? refs : [])
+      const items = (Array.isArray(refs) ? refs : [])
         .map((ref) => liveFlightMap.get(normalizeAssignmentRef(ref)))
         .filter(Boolean)
         .map((flight) => ({
+          id: normalizeAssignmentRef(flight.id),
           gate: normalizeStorageGateLabel(flight.gate),
-          time: normalizeStorageTime(flight.etd),
           flightNo: normalizeStorageFlightNumber(flight.flightNo || "-"),
+          rt: formatRtForTimeline(flight),
+          rtMinutes: getLiveFlightRtMinutes(flight),
         }))
-        .filter((item) => item.time !== "----" && item.time !== "-");
-      const minutes = times.map((item) => toMinutes(item.time)).filter((m) => m !== null);
-      const minRaw = minutes.length ? Math.min(...minutes) : 0;
-      const maxRaw = minutes.length ? Math.max(...minutes) : 1440;
-      const pad = 30;
-      const min = Math.max(0, minRaw - pad);
-      const max = Math.min(1440, maxRaw + pad);
-      const span = Math.max(60, max - min);
+        .sort((a, b) => {
+          const aRt = Number.isFinite(a.rtMinutes) ? a.rtMinutes : Number.MAX_SAFE_INTEGER;
+          const bRt = Number.isFinite(b.rtMinutes) ? b.rtMinutes : Number.MAX_SAFE_INTEGER;
+          if (aRt !== bRt) return aRt - bRt;
+          return a.gate.localeCompare(b.gate);
+        });
 
-      const axisStart = formatTime(Math.floor(min / 60), min % 60);
-      const mid = min + Math.floor(span / 2);
-      const axisMid = formatTime(Math.floor(mid / 60), mid % 60);
-      const axisEnd = formatTime(Math.floor((min + span) / 60), (min + span) % 60);
+      const chips = items.length
+        ? items
+            .map(
+              (item) => `<div class="assignment-chip" data-flight-ref="${item.id}" data-fs-key="${fs}">
+                <button class="assignment-chip-close" type="button" aria-label="Remove assignment" data-flight-ref="${item.id}" data-fs-key="${fs}">x</button>
+                <span class="assignment-chip-gate">${item.gate}</span>
+                <span class="assignment-chip-flight">Flight ${item.flightNo}</span>
+                <span class="assignment-chip-rt">RT ${item.rt}</span>
+              </div>`
+            )
+            .join("")
+        : `<div class="assignment-chip assignment-chip-empty">
+            <span class="assignment-chip-gate">No flights assigned</span>
+          </div>`;
 
-      const tickStep = span > 360 ? 120 : 60;
-      const tickStart = Math.floor(min / tickStep) * tickStep;
-      const ticks = [];
-      for (let t = tickStart; t <= min + span; t += tickStep) {
-        const left = Math.round(((t - min) / span) * 100);
-        const clamped = Math.min(98, Math.max(2, left));
-        ticks.push(
-          `<span class="timeline-tick" style="left:${clamped}%">${formatTime(Math.floor(t / 60), t % 60)}</span>`
-        );
-      }
-
-      let rowsCount = Math.min(4, Math.max(1, Math.ceil(times.length / 4)));
-      if (times.length > 1 && rowsCount === 1) rowsCount = 2;
-      const rowHeight = 18;
-      const baseHeight = 34;
-      const timelineHeight = baseHeight + (rowsCount - 1) * rowHeight;
-
-      const markers = times
-        .map((item, idx) => {
-          const m = toMinutes(item.time);
-          const left = m === null ? 0 : Math.round(((m - min) / span) * 100);
-          const clamped = Math.min(98, Math.max(2, left));
-          const rowIndex = rowsCount > 1 ? idx % rowsCount : 0;
-          const offset = rowsCount > 1 ? (rowIndex - (rowsCount - 1) / 2) * 1.2 : 0;
-          const adjusted = Math.min(98, Math.max(2, clamped + offset));
-          const top = 8 + rowIndex * rowHeight;
-          return `<div class="timeline-marker" style="left:${adjusted}%; top:${top}px;">
-              <div class="timeline-dot"></div>
-              <div class="timeline-label-small">${item.flightNo} ${item.gate} ${item.time}</div>
-            </div>`;
-        })
-        .join("");
-
-      return `<div class="timeline-row">
-          <div class="timeline-label">${fs}</div>
-          <div class="timeline" style="height:${timelineHeight}px;">
-            <div class="timeline-axis"><span>${axisStart}</span><span>${axisMid}</span><span>${axisEnd}</span></div>
-            <div class="timeline-ticks">${ticks.join("")}</div>
-            ${markers}
-          </div>
+      return `<div class="assignment-timeline-row">
+          <div class="assignment-timeline-fs">${fs}</div>
+          <div class="assignment-timeline-list">${chips}</div>
         </div>`;
     });
 
@@ -2765,6 +3241,28 @@ if (assignSummary) {
   };
   renderTimeline();
   document.addEventListener("assignments:updated", renderTimeline);
+  assignSummary.addEventListener("click", (event) => {
+    const remove = event.target.closest(".assignment-chip-close");
+    if (!remove) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const fsKey = String(remove.dataset.fsKey || "").trim();
+    const flightRef = normalizeAssignmentRef(remove.dataset.flightRef || "");
+    if (!fsKey || !flightRef) return;
+    const refs = Array.isArray(assignments[fsKey]) ? assignments[fsKey] : [];
+    const remaining = refs
+      .map((ref) => normalizeAssignmentRef(ref))
+      .filter((ref) => ref && ref !== flightRef);
+    if (remaining.length) {
+      assignments[fsKey] = Array.from(new Set(remaining));
+    } else {
+      delete assignments[fsKey];
+    }
+    applyAssignmentsToCards();
+    saveAssignmentsToStorage();
+    document.dispatchEvent(new Event("assignments:updated"));
+    populateAssignGates();
+  });
 }
 
 populateAssignGates();

@@ -16,6 +16,8 @@ const normalizeStorageLabel = (value) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const parseActionFlag = (value) => value === true || value === "true";
+
 const normalizeGateLabel = (value) => {
   const gate = normalizeStorageLabel(value).replace(/^gate\s*/i, "");
   return gate ? `Gate ${gate}` : "Gate --";
@@ -192,6 +194,10 @@ const getRunnerFlights = () =>
       const assignedFs = normalizeStorageLabel(flight.assignedFs || "");
       const remarks = normalizeStorageLabel(flight.remarks || "");
       const status = flight.status === "completed" ? "completed" : "assigned";
+      const pullRequired = parseActionFlag(flight.pullRequired);
+      const closeRequired = parseActionFlag(flight.closeRequired);
+      const pullCompleted = parseActionFlag(flight.pullCompleted);
+      const closeCompleted = parseActionFlag(flight.closeCompleted);
       return {
         id,
         gate,
@@ -202,6 +208,10 @@ const getRunnerFlights = () =>
         assignedFs,
         remarks,
         status,
+        pullRequired,
+        closeRequired,
+        pullCompleted,
+        closeCompleted,
       };
     })
     .filter((flight) => flight.assignedFs)
@@ -220,17 +230,6 @@ const splitFlightsAcrossDevices = (flights, deviceCount) => {
     groups[index % deviceCount].push(flight);
   });
   return groups;
-};
-
-const getRequiredActionTargets = (flights) => {
-  const assignedFlights = flights.filter((flight) => flight.status === "assigned");
-  if (!assignedFlights.length) {
-    return { pullId: "", closeId: "" };
-  }
-  const pullId = assignedFlights[0].id;
-  const closeId =
-    assignedFlights.length > 1 ? assignedFlights[1].id : assignedFlights[0].id;
-  return { pullId, closeId };
 };
 
 const modal = document.querySelector("#runner-modal");
@@ -338,6 +337,25 @@ const setCardActionCompleted = (card, actionType) => {
 
   marker.className = `runner-required ${config.completedClass} is-static`;
   marker.textContent = config.completedText;
+
+  const flightId = card.dataset.flightId;
+  updateLiveFlight(flightId, (flight) => {
+    const next = {
+      ...flight,
+      pullRequired: parseActionFlag(flight.pullRequired),
+      closeRequired: parseActionFlag(flight.closeRequired),
+      pullCompleted: parseActionFlag(flight.pullCompleted),
+      closeCompleted: parseActionFlag(flight.closeCompleted),
+    };
+    if (actionType === "pull") {
+      next.pullRequired = true;
+      next.pullCompleted = true;
+    } else {
+      next.closeRequired = true;
+      next.closeCompleted = true;
+    }
+    return next;
+  });
 };
 
 const hashText = (value) => {
@@ -569,7 +587,7 @@ const closeModal = (resetActiveCard = true) => {
   }
 };
 
-const createRunnerCardElement = (flight, requiredTargets) => {
+const createRunnerCardElement = (flight) => {
   const card = document.createElement("article");
   card.className = "runner-card";
   card.dataset.status = flight.status;
@@ -596,11 +614,24 @@ const createRunnerCardElement = (flight, requiredTargets) => {
     </div>
   `;
 
-  if (flight.status !== "completed" && requiredTargets?.pullId === flight.id) {
-    addRequiredMarker(card, "runner-pull-required", "Pull Team required");
+  const shouldShowPull = flight.pullCompleted || flight.pullRequired;
+  const shouldShowClose = flight.closeCompleted || flight.closeRequired;
+
+  if (shouldShowPull) {
+    addRequiredMarker(
+      card,
+      flight.pullCompleted ? "runner-pull-completed" : "runner-pull-required",
+      flight.pullCompleted ? "Pull Team Completed" : "Pull Team required"
+    );
   }
-  if (flight.status !== "completed" && requiredTargets?.closeId === flight.id) {
-    addRequiredMarker(card, "runner-close-gate-required", "Close Gate required");
+  if (shouldShowClose) {
+    addRequiredMarker(
+      card,
+      flight.closeCompleted
+        ? "runner-close-gate-completed"
+        : "runner-close-gate-required",
+      flight.closeCompleted ? "Gate Closed" : "Close Gate required"
+    );
   }
 
   card.classList.add("is-clickable");
@@ -617,12 +648,12 @@ const createRunnerCardElement = (flight, requiredTargets) => {
   return card;
 };
 
-const renderFlightsToDevice = (device, flights, requiredTargets) => {
+const renderFlightsToDevice = (device, flights) => {
   const list = device?.querySelector(".runner-list");
   if (!list) return;
   list.querySelectorAll(".runner-card").forEach((card) => card.remove());
   flights.forEach((flight) => {
-    list.appendChild(createRunnerCardElement(flight, requiredTargets));
+    list.appendChild(createRunnerCardElement(flight));
   });
   const controller = runnerDeviceControllers.get(device);
   if (controller) {
@@ -632,17 +663,16 @@ const renderFlightsToDevice = (device, flights, requiredTargets) => {
 
 const refreshRunnerBoards = () => {
   const flights = getRunnerFlights();
-  const requiredTargets = getRequiredActionTargets(flights);
 
   if (desktopDevices.length) {
     const grouped = splitFlightsAcrossDevices(flights, desktopDevices.length);
     desktopDevices.forEach((device, index) => {
-      renderFlightsToDevice(device, grouped[index] || [], requiredTargets);
+      renderFlightsToDevice(device, grouped[index] || []);
     });
   }
 
   if (mobileDevice) {
-    renderFlightsToDevice(mobileDevice, flights, requiredTargets);
+    renderFlightsToDevice(mobileDevice, flights);
   }
 };
 
@@ -721,6 +751,7 @@ if (actionActionButton) {
     if (activeCard && activeActionMode === "close") {
       setCardActionCompleted(activeCard, "close");
     }
+    refreshRunnerBoards();
     closeActionModal(true);
   });
 }
