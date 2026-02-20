@@ -3975,6 +3975,7 @@ body {
   pointer-events: none;
   transition: opacity 0.2s ease;
   z-index: 122;
+  
 }
 
 .team-member-overlay-modal {
