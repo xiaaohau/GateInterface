@@ -504,52 +504,151 @@ const applySinglePullAlert = () => {
   syncLiveFlightsFromPage();
 };
 
-const DOCKS_PER_ROW = 4;
+const TASKS_PER_TEAM = 24;
 
-const getDockCountForCard = (card) => {
-  if (!card) return 0;
-  const stored = Number(card.dataset.dockCount);
-  if (Number.isFinite(stored) && stored >= 0 && stored <= DOCKS_PER_ROW) {
-    return stored;
+const clampCompletedTasks = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  return Math.max(0, Math.min(TASKS_PER_TEAM, Math.round(numeric)));
+};
+
+const parseCompletedTasksFromText = (value) => {
+  const text = normalizeStorageLabel(value);
+  if (!text) return null;
+  const completedMatch = text.match(/(\d{1,2})\s*\/\s*24/i);
+  if (completedMatch) {
+    return clampCompletedTasks(completedMatch[1]);
   }
-  const randomCount = Math.floor(Math.random() * DOCKS_PER_ROW) + 1;
-  card.dataset.dockCount = String(randomCount);
+  const pctMatch = text.match(/(\d{1,3})%/);
+  if (pctMatch) {
+    const pct = Number(pctMatch[1]);
+    if (Number.isFinite(pct) && pct >= 0) {
+      return clampCompletedTasks((pct / 100) * TASKS_PER_TEAM);
+    }
+  }
+  return null;
+};
+
+const getDefaultCompletedTasksForCard = (card) => {
+  if (!card) return 0;
+  const stored = clampCompletedTasks(card.dataset.completedTasks);
+  if (stored !== null) return stored;
+  const randomCount = Math.floor(Math.random() * TASKS_PER_TEAM) + 1;
+  card.dataset.completedTasks = String(randomCount);
   return randomCount;
 };
 
-const buildDockMeterMarkup = (dockCount) => {
-  const clamped = Math.max(0, Math.min(DOCKS_PER_ROW, dockCount));
-  const docks = Array.from({ length: DOCKS_PER_ROW }, (_, idx) => {
-    const activeClass = idx < clamped ? " is-active" : "";
-    return `<span class="progress-dock${activeClass}"></span>`;
-  }).join("");
-  return `<span class="dock-meter" aria-hidden="true">${docks}</span>`;
+const buildTaskProgressMarkup = (completedTasks) => {
+  const clamped = clampCompletedTasks(completedTasks) ?? 0;
+  return `<span class="task-progress">${clamped} / ${TASKS_PER_TEAM}</span>`;
+};
+
+const normalizeAssignedTeamsForStorage = (teams) => {
+  if (!Array.isArray(teams)) return [];
+  return teams
+    .map((team) => {
+      const label = normalizeStorageLabel(team?.label || team?.team || "");
+      if (!label) return null;
+      let completedTasks = clampCompletedTasks(team?.completedTasks);
+      if (completedTasks === null) {
+        const numericSignal = Number(team?.signal);
+        if (Number.isFinite(numericSignal)) {
+          const clampedSignal = Math.max(1, Math.min(4, Math.round(numericSignal)));
+          completedTasks = clampCompletedTasks((clampedSignal / 4) * TASKS_PER_TEAM);
+        }
+      }
+      if (completedTasks === null) {
+        completedTasks = parseCompletedTasksFromText(team?.progress);
+      }
+      if (completedTasks === null) {
+        completedTasks = 0;
+      }
+      return { label, completedTasks };
+    })
+    .filter(Boolean)
+    .slice(0, 4);
+};
+
+const getAssignedTeamsFromCard = (card) => {
+  if (!card) return [];
+  const fallbackCompletedTasks = getDefaultCompletedTasksForCard(card);
+  return Array.from(card.querySelectorAll(".flight-progress .progress-row"))
+    .map((row) => {
+      const label = normalizeStorageLabel(
+        row.querySelector("span:first-child")?.textContent || ""
+      );
+      if (!label) return null;
+
+      const indicator = row.querySelector("span:nth-child(2)");
+      let completedTasks = parseCompletedTasksFromText(indicator?.textContent || "");
+      if (completedTasks === null) {
+        const activeDocks = row.querySelectorAll(".progress-dock.is-active").length;
+        if (activeDocks > 0) {
+          completedTasks = clampCompletedTasks((activeDocks / 4) * TASKS_PER_TEAM);
+        }
+      }
+      if (completedTasks === null) {
+        completedTasks = fallbackCompletedTasks;
+      }
+      const clampedCompletedTasks = clampCompletedTasks(completedTasks) ?? 0;
+      row.dataset.completedTasks = String(clampedCompletedTasks);
+      return { label, completedTasks: clampedCompletedTasks };
+    })
+    .filter(Boolean)
+    .slice(0, 4);
+};
+
+const shouldBlinkForZeroTaskTeams = (card) => {
+  const teams = getAssignedTeamsFromCard(card);
+  if (!teams.length) return false;
+  return teams.every(
+    (team) => (clampCompletedTasks(team?.completedTasks) ?? 0) === 0
+  );
+};
+
+const applyZeroTaskBlinking = () => {
+  const cards = getInProgressCards();
+  if (!cards.length) return;
+
+  const visibleCards = cards.filter((card) => !card.classList.contains("is-hidden"));
+  const scopeCards = visibleCards.length ? visibleCards : cards;
+  const zeroTaskCandidates = scopeCards.filter((card) =>
+    shouldBlinkForZeroTaskTeams(card)
+  );
+  const targetCard = zeroTaskCandidates[0] || scopeCards[0] || null;
+
+  cards.forEach((card) => {
+    card.classList.toggle("critical", card === targetCard);
+  });
 };
 
 const applyAssignedTeamDocks = () => {
   const page = document.querySelector(".in-progress-page");
   if (!page) return;
   page.querySelectorAll(".flight-card").forEach((card) => {
-    const dockCount = getDockCountForCard(card);
+    const fallbackCompletedTasks = getDefaultCompletedTasksForCard(card);
     card.querySelectorAll(".flight-progress .progress-row").forEach((row) => {
       const spans = Array.from(row.children).filter(
         (child) => child.tagName === "SPAN"
       );
-      let indicator = spans[spans.length - 1];
+      let indicator = spans[1];
       if (!indicator) {
         indicator = document.createElement("span");
         row.appendChild(indicator);
       }
-      indicator.classList.add("dock-meter");
-      indicator.innerHTML = "";
-      for (let i = 0; i < DOCKS_PER_ROW; i += 1) {
-        const dock = document.createElement("span");
-        dock.className = "progress-dock";
-        if (i < dockCount) dock.classList.add("is-active");
-        indicator.appendChild(dock);
+      let completedTasks =
+        clampCompletedTasks(row.dataset.completedTasks) ??
+        parseCompletedTasksFromText(indicator.textContent);
+      if (completedTasks === null) {
+        completedTasks = fallbackCompletedTasks;
       }
+      const clampedCompletedTasks = clampCompletedTasks(completedTasks) ?? 0;
+      row.dataset.completedTasks = String(clampedCompletedTasks);
+      indicator.className = "task-progress";
+      indicator.textContent = `${clampedCompletedTasks} / ${TASKS_PER_TEAM}`;
     });
   });
+  applyZeroTaskBlinking();
 };
 
 const ZONE_A_GATES = Array.from({ length: 21 }, (_, idx) => `A${idx + 1}`);
@@ -1367,9 +1466,191 @@ const ASSIGNED_SUMMARY_LABELS = [
   "Flight Number",
   "Gate Opening Time",
 ];
+
+const TASKING_TOTAL = 24;
+const TASKING_LIBRARY = [
+  {
+    title: "Start of Duty",
+    instructions: ["Ensure this task is complete before starting duty."],
+  },
+  {
+    title: "Opening of Door 9",
+    instructions: ["Ensure all the team members arrived."],
+    type: "Radio Button",
+    customFieldTitle: "Opening of Door 9",
+  },
+  {
+    title: "Pre Ops Briefing",
+    instructions: ["TL to conduct Pre Ops briefing."],
+    type: "Radio Button",
+    customFieldTitle: "Pre Ops Briefing",
+  },
+  {
+    title: "Conduct Pre Ops Self / Equipment Checks",
+    instructions: [
+      "Ensure number of Keys tally as per GHR Key-Set List.",
+      "1. X-ray (Heimann/Nuctech)",
+      "2. Panel Box",
+      "3. Alarm Reset",
+      "4. LAG Bin",
+      "5. EFO Tablet with Charger (Serviceable Condition)",
+    ],
+    type: "Radio Button",
+    customFieldTitle: "Pre Ops Self / Equipment checks",
+  },
+  {
+    title: "Conduct Pre Ops Security Sweep",
+    instructions: [
+      "1. Ensure check the screening area.",
+      "2. Check all the X Ray tunnel.",
+      "3. Check Search Room.",
+      "4. Ensure no unattended items inside GHR.",
+      "5. Ensure all the fire hosereels /extinguishers shelf sealed.",
+      "6. Check and secure Door 2,4,5.",
+      "7. Ensure Anti Hijack Door(s) open.",
+      "8. Placement of 'Security Screening in Progress. Do Not Enter' signage at Door 4.",
+      "9. Lock & secure Door 4 key cover using the serviceable padlock available. (Default Passcode: 1-2-8)",
+      "10. Always open lane 1 for ops.",
+    ],
+  },
+  {
+    title: "Check on Door 4 Lock Cover",
+    instructions: [
+      "To ensure Door 4 Lock Cover is locked and secured during live ops.",
+    ],
+  },
+  {
+    title: "Open Lane",
+    instructions: ["Ensure officers are in ready to serve posture."],
+  },
+  {
+    title: "Early Bunching / Queue",
+    instructions: ["Queue flow."],
+    type: "Radio Button",
+    customFieldTitle: "Long Queue",
+  },
+  {
+    title: "Record of PI",
+    instructions: [
+      "Account for all the detected PI.",
+      "Please indicate total number of PI detected in the empty fill.",
+    ],
+  },
+  {
+    title: "Subtask 10",
+    instructions: ["Task details not provided in current attachments."],
+  },
+  {
+    title: "Subtask 11",
+    instructions: ["Task details not provided in current attachments."],
+  },
+  {
+    title: "Subtask 12",
+    instructions: ["Task details not provided in current attachments."],
+  },
+  {
+    title: "Subtask 13",
+    instructions: ["Task details not provided in current attachments."],
+  },
+  {
+    title: "Subtask 14",
+    instructions: ["Task details not provided in current attachments."],
+  },
+  {
+    title: "Subtask 15",
+    instructions: ["Task details not provided in current attachments."],
+  },
+  {
+    title: "No. of Prohibited item",
+    instructions: [
+      "Please indicate the total number of prohibited item(s) detected in the empty fill.",
+    ],
+  },
+  {
+    title: "Passenger Load",
+    instructions: ["Please indicate final load for the flight in the empty fill."],
+  },
+  {
+    title: "Random Alarm Activation",
+    instructions: [
+      "Please indicate total number of passengers activated random alarm in empty fill.",
+    ],
+  },
+  {
+    title: "Disposable of PI",
+    instructions: ["Account for all the detected PI."],
+    type: "Radio Button",
+    customFieldTitle: "PI Disposal",
+  },
+  {
+    title: "Conduct Anti-Theft Checks",
+    instructions: [
+      "Ensure all the team members underwent anti-theft checks before exiting Door 9.",
+      "*Should there be an activation via the WTMD, frisking search must be conducted.",
+      "*Discovery of any Lost & Found items must be handed over to the nearest information counter promptly as practicable.",
+      "*Any retention of Lost & Found items for personal gain is an act of 'Dishonest Misappropriation of Property' and it is a chargeable offence under section 403 of the Penal Code.",
+    ],
+  },
+  {
+    title: "Conduct Post Ops Security Sweep",
+    instructions: [
+      "TL to deploy officers for security sweep, take Photo of:",
+      "1. Aerobridge Control Panel - No Foreign Object.",
+      "2. Door 3 Secure (Optional).",
+      "3. Door 5 Secure.",
+      "4. Removal of 'Security Screening in Progress. Do Not Enter' signage at Door 4.",
+      "5. Unlock padlock at Door 4 key cover. (Default Passcode: 1-2-8)",
+    ],
+    type: "Radio Button",
+    customFieldTitle: "Post Ops Security Sweep",
+  },
+  {
+    title: "eFOF Submission",
+    instructions: ["Submission EFOF."],
+    type: "Radio Button",
+    customFieldTitle: "eFOF Submission",
+  },
+  {
+    title: "Lock and Secure Door 9",
+    instructions: ["Locking of Door 9 (End Ops)."],
+    type: "Radio Button",
+    customFieldTitle: "Secured Door 9",
+  },
+  {
+    title: "End of Duty",
+    instructions: ["Ensure this task is complete after completing duty."],
+  },
+];
+
+const escapeHtml = (value) =>
+  String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const buildTaskInfoButtonMarkup = (teamLabel, completedTasks) => {
+  const safeLabel = escapeHtml(teamLabel || "Team");
+  const clamped = clampCompletedTasks(completedTasks) ?? 0;
+  return `<button class="task-info-button" type="button" data-tasking-info="true" data-team-label="${safeLabel}" data-completed-tasks="${clamped}" aria-label="View ${safeLabel} tasking">Info</button>`;
+};
+
 let modalTeams = [];
 let modalActiveTeamIndex = 0;
 let modalAssignedFlightId = "";
+let taskingBackdrop = null;
+let taskingModal = null;
+let taskingTitle = null;
+let taskingProgress = null;
+let taskingList = null;
+let taskingClose = null;
+let teamMemberBackdrop = null;
+let teamMemberModal = null;
+let teamMemberTitle = null;
+let teamMemberSubtitle = null;
+let teamMemberList = null;
+let teamMemberClose = null;
 const assignList = document.querySelector("#assign-gate-list");
 const assignFs = document.querySelector("#assign-fs");
 const assignSubmit = document.querySelector("#assign-submit");
@@ -1382,6 +1663,182 @@ const STORAGE_KEYS = {
   fsLeader: "gateinterface.fsLeader",
   assignments: "gateinterface.assignments",
   liveFlights: "gateinterface.liveFlights",
+};
+
+const ensureTaskingOverlay = () => {
+  if (taskingBackdrop && taskingModal) return;
+  document.body.insertAdjacentHTML(
+    "beforeend",
+    `
+      <div class="tasking-overlay-backdrop" id="tasking-overlay-backdrop" aria-hidden="true"></div>
+      <div class="tasking-overlay-modal" id="tasking-overlay-modal" role="dialog" aria-modal="true" aria-labelledby="tasking-overlay-title">
+        <div class="tasking-overlay-header">
+          <div>
+            <h3 class="tasking-overlay-title" id="tasking-overlay-title">Tasking</h3>
+            <div class="tasking-overlay-progress" id="tasking-overlay-progress">0 / ${TASKING_TOTAL} completed</div>
+          </div>
+          <button class="tasking-overlay-close" id="tasking-overlay-close" type="button">Close</button>
+        </div>
+        <div class="tasking-overlay-body">
+          <ol class="tasking-overlay-list" id="tasking-overlay-list"></ol>
+        </div>
+      </div>
+    `
+  );
+  taskingBackdrop = document.querySelector("#tasking-overlay-backdrop");
+  taskingModal = document.querySelector("#tasking-overlay-modal");
+  taskingTitle = document.querySelector("#tasking-overlay-title");
+  taskingProgress = document.querySelector("#tasking-overlay-progress");
+  taskingList = document.querySelector("#tasking-overlay-list");
+  taskingClose = document.querySelector("#tasking-overlay-close");
+
+  if (taskingClose) {
+    taskingClose.addEventListener("click", () => closeTaskingOverlay());
+  }
+  if (taskingBackdrop) {
+    taskingBackdrop.addEventListener("click", () => closeTaskingOverlay());
+  }
+};
+
+const isTaskingOverlayVisible = () =>
+  Boolean(taskingModal && taskingModal.classList.contains("is-visible"));
+
+const closeTaskingOverlay = () => {
+  if (!taskingBackdrop || !taskingModal) return;
+  taskingBackdrop.classList.remove("is-visible");
+  taskingModal.classList.remove("is-visible");
+};
+
+const openTaskingOverlay = (teamLabel, completedTasks) => {
+  ensureTaskingOverlay();
+  if (!taskingBackdrop || !taskingModal || !taskingList) return;
+  const clampedCompleted = clampCompletedTasks(completedTasks) ?? 0;
+  const safeLabel = normalizeStorageLabel(teamLabel) || "Team";
+  if (taskingTitle) {
+    taskingTitle.textContent = `${safeLabel} Tasking`;
+  }
+  if (taskingProgress) {
+    taskingProgress.textContent = `${clampedCompleted} / ${TASKING_TOTAL} completed`;
+  }
+
+  taskingList.innerHTML = TASKING_LIBRARY.map((task, index) => {
+    const taskNumber = index + 1;
+    const isComplete = taskNumber <= clampedCompleted;
+    const instructions = Array.isArray(task.instructions)
+      ? task.instructions
+      : [task.instructions];
+    const instructionMarkup = instructions
+      .filter(Boolean)
+      .map((line) => escapeHtml(line))
+      .join("<br />");
+    const typeMarkup = task.type
+      ? `<div class="tasking-overlay-meta"><span>Type</span><strong>${escapeHtml(
+          task.type
+        )}</strong></div>`
+      : "";
+    const customMarkup = task.customFieldTitle
+      ? `<div class="tasking-overlay-meta"><span>Custom Field Title</span><strong>${escapeHtml(
+          task.customFieldTitle
+        )}</strong></div>`
+      : "";
+    return `
+      <li class="tasking-overlay-item${isComplete ? " is-complete" : ""}">
+        <div class="tasking-overlay-item-head">
+          <span>Subtask ${taskNumber}</span>
+          <span>${isComplete ? "Complete" : "Pending"}</span>
+        </div>
+        <div class="tasking-overlay-item-title">${escapeHtml(task.title)}</div>
+        <div class="tasking-overlay-item-instruction">${instructionMarkup || "-"}</div>
+        ${typeMarkup}
+        ${customMarkup}
+      </li>
+    `;
+  }).join("");
+
+  taskingBackdrop.classList.add("is-visible");
+  taskingModal.classList.add("is-visible");
+  if (taskingClose) {
+    taskingClose.focus();
+  }
+};
+
+const ensureTeamMemberOverlay = () => {
+  if (teamMemberBackdrop && teamMemberModal) return;
+  document.body.insertAdjacentHTML(
+    "beforeend",
+    `
+      <div class="team-member-overlay-backdrop" id="team-member-overlay-backdrop" aria-hidden="true"></div>
+      <div class="team-member-overlay-modal" id="team-member-overlay-modal" role="dialog" aria-modal="true" aria-labelledby="team-member-overlay-title">
+        <div class="team-member-overlay-header">
+          <div>
+            <h3 class="team-member-overlay-title" id="team-member-overlay-title">Team Members</h3>
+            <div class="team-member-overlay-subtitle" id="team-member-overlay-subtitle">-</div>
+          </div>
+          <button class="team-member-overlay-close" id="team-member-overlay-close" type="button">Close</button>
+        </div>
+        <div class="team-member-overlay-body">
+          <ul class="team-member-overlay-list" id="team-member-overlay-list"></ul>
+        </div>
+      </div>
+    `
+  );
+
+  teamMemberBackdrop = document.querySelector("#team-member-overlay-backdrop");
+  teamMemberModal = document.querySelector("#team-member-overlay-modal");
+  teamMemberTitle = document.querySelector("#team-member-overlay-title");
+  teamMemberSubtitle = document.querySelector("#team-member-overlay-subtitle");
+  teamMemberList = document.querySelector("#team-member-overlay-list");
+  teamMemberClose = document.querySelector("#team-member-overlay-close");
+
+  if (teamMemberClose) {
+    teamMemberClose.addEventListener("click", () => closeTeamMemberOverlay());
+  }
+  if (teamMemberBackdrop) {
+    teamMemberBackdrop.addEventListener("click", () => closeTeamMemberOverlay());
+  }
+};
+
+const isTeamMemberOverlayVisible = () =>
+  Boolean(teamMemberModal && teamMemberModal.classList.contains("is-visible"));
+
+const closeTeamMemberOverlay = () => {
+  if (!teamMemberBackdrop || !teamMemberModal) return;
+  teamMemberBackdrop.classList.remove("is-visible");
+  teamMemberModal.classList.remove("is-visible");
+};
+
+const openTeamMemberOverlay = (teamLabel, memberCount) => {
+  ensureTeamMemberOverlay();
+  if (!teamMemberBackdrop || !teamMemberModal || !teamMemberList) return;
+
+  const normalizedLabel = normalizeTeamLabelForMembers(teamLabel) || "Team";
+  const members = buildAssignedTeamMembers(normalizedLabel, memberCount);
+
+  if (teamMemberTitle) {
+    teamMemberTitle.textContent = normalizedLabel;
+  }
+  if (teamMemberSubtitle) {
+    teamMemberSubtitle.textContent = `${members.length} officers`;
+  }
+  teamMemberList.innerHTML = members.length
+    ? members
+        .map((member) => {
+          const roleMarkup =
+            member.role === "Team Leader"
+              ? `<small class="team-member-role">${escapeHtml(member.role)}</small>`
+              : "";
+          return `<li><span>${escapeHtml(member.id)} ${escapeHtml(member.name)}${roleMarkup}<br /><small>${escapeHtml(
+            member.phone
+          )}</small></span><span>&check;</span></li>`;
+        })
+        .join("")
+    : "<li><span>No officers assigned</span><span>-</span></li>";
+
+  teamMemberBackdrop.classList.add("is-visible");
+  teamMemberModal.classList.add("is-visible");
+  if (teamMemberClose) {
+    teamMemberClose.focus();
+  }
 };
 
 const normalizeFsLeaderName = (value) =>
@@ -1668,6 +2125,39 @@ const collectLiveFlightsFromPage = () => {
         ? "completed"
         : "assigned";
     const cardActionState = getCardPullCloseState(card);
+    const gateChanged = card.classList.contains("gate-changed");
+    const gateChangeOldGate = normalizeAllowedGateCode(
+      card.dataset.gateChangeOldGate || ""
+    );
+    const metaSpans = Array.from(
+      card.querySelectorAll(".flight-meta span")
+    );
+    const aircraftType =
+      normalizeStorageLabel(metaSpans[0]?.textContent || "")
+        .replace(/^type\s*:\s*/i, "") || "--";
+    const pax =
+      normalizeStorageLabel(metaSpans[1]?.textContent || "")
+        .replace(/^pax\s*:\s*/i, "") || "--";
+    const screeningContainer = card.querySelector(".flight-screening");
+    const screeningSummary =
+      screeningContainer && !screeningContainer.classList.contains("is-hidden")
+        ? Array.from(screeningContainer.querySelectorAll("span"))
+            .map((item) => normalizeStorageLabel(item.textContent))
+            .filter(Boolean)
+            .join(" | ")
+        : "";
+    const hasPatdown =
+      card.classList.contains("has-patdown") ||
+      Boolean(card.querySelector(".badge-patdown"));
+    const hasEnhanced =
+      card.classList.contains("has-screening") ||
+      Boolean(card.querySelector(".badge-enhanced"));
+    const assignedTeams = normalizeAssignedTeamsForStorage(
+      getAssignedTeamsFromCard(card)
+    );
+    const storedAssignedTeams = normalizeAssignedTeamsForStorage(
+      stored?.assignedTeams
+    );
 
     return {
       id,
@@ -1679,8 +2169,16 @@ const collectLiveFlightsFromPage = () => {
       rt,
       rtMinutes,
       assignedFs: getAssignedFsFromCard(card, id, assigneeMap),
+      aircraftType,
+      pax,
+      screeningSummary,
+      hasPatdown,
+      hasEnhanced,
       status,
       remarks: normalizeStorageLabel(card.dataset.remarks || ""),
+      assignedTeams: assignedTeams.length ? assignedTeams : storedAssignedTeams,
+      gateChanged,
+      gateChangeOldGate: gateChanged ? gateChangeOldGate : "",
       pullRequired: cardActionState.pullRequired,
       closeRequired: cardActionState.closeRequired,
       pullCompleted: cardActionState.pullCompleted,
@@ -1954,7 +2452,52 @@ const staffPool = [
 ];
 
 const pickTeamMembers = (count = 3) =>
-  staffPool.sort(() => 0.5 - Math.random()).slice(0, count);
+  [...staffPool].sort(() => 0.5 - Math.random()).slice(0, count);
+
+const getTeamMemberCountFromLabel = (label) => {
+  const match = String(label || "").match(/[({](\d+)[)}]/);
+  const count = match ? Number(match[1]) : 3;
+  return Number.isFinite(count) && count > 0 ? count : 3;
+};
+
+const normalizeTeamLabelForMembers = (label) =>
+  normalizeStorageLabel(String(label || "").replace(/\s*-\s*main team\s*$/i, ""));
+
+const hashTeamLabel = (label) => {
+  const text = normalizeTeamLabelForMembers(label);
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) % 2147483647;
+  }
+  return Math.abs(hash);
+};
+
+const buildAssignedTeamMembers = (teamLabel, requestedCount) => {
+  const memberCount = Math.max(
+    1,
+    Math.min(staffPool.length, Number(requestedCount) || getTeamMemberCountFromLabel(teamLabel))
+  );
+  const seed = hashTeamLabel(teamLabel);
+  const used = new Set();
+  const members = [];
+  let cursor = seed || 1;
+
+  while (members.length < memberCount) {
+    const index = cursor % staffPool.length;
+    cursor = (cursor * 13 + 17) % 2147483647;
+    if (used.has(index)) continue;
+    used.add(index);
+    const baseMember = staffPool[index];
+    members.push({
+      id: baseMember.id,
+      name: baseMember.name,
+      phone: baseMember.phone,
+      role: members.length === 0 ? "Team Leader" : "Officer",
+    });
+  }
+
+  return members;
+};
 
 const closeGatePool = [
   { id: "CG-1180", name: "R. Goh" },
@@ -1964,7 +2507,7 @@ const closeGatePool = [
 ];
 
 const pickCloseOfficers = (count = 2) =>
-  closeGatePool.sort(() => 0.5 - Math.random()).slice(0, count);
+  [...closeGatePool].sort(() => 0.5 - Math.random()).slice(0, count);
 
 const parseTime = (value) => {
   const match = value.match(/(\d{2})(\d{2})/);
@@ -2249,6 +2792,35 @@ if (modalTeamTabs) {
   });
 }
 
+if (modalTeamList) {
+  modalTeamList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-tasking-info=\"true\"]");
+    if (button) {
+      const teamLabel = button.dataset.teamLabel || "Team";
+      const completedTasks = clampCompletedTasks(button.dataset.completedTasks) ?? 0;
+      openTaskingOverlay(teamLabel, completedTasks);
+      return;
+    }
+
+    const row = event.target.closest("[data-team-members=\"true\"]");
+    if (!row) return;
+    const teamLabel = row.dataset.teamMembersLabel || "Team";
+    const memberCount = Number(row.dataset.teamMembersCount);
+    openTeamMemberOverlay(teamLabel, memberCount);
+  });
+
+  modalTeamList.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    if (event.target.closest("[data-tasking-info=\"true\"]")) return;
+    const row = event.target.closest("[data-team-members=\"true\"]");
+    if (!row) return;
+    event.preventDefault();
+    const teamLabel = row.dataset.teamMembersLabel || "Team";
+    const memberCount = Number(row.dataset.teamMembersCount);
+    openTeamMemberOverlay(teamLabel, memberCount);
+  });
+}
+
 const setAssignedModalControlsVisible = (isVisible) => {
   if (modalAssignedRemarksPanel) {
     modalAssignedRemarksPanel.classList.toggle("is-hidden", !isVisible);
@@ -2395,15 +2967,11 @@ const openAssignedTeamsModal = (card) => {
     modalReportingTime.textContent = getReportingTime(etd);
   }
 
-  const assignedTeams = Array.from(
-    card.querySelectorAll(".flight-progress .progress-row")
-  ).map((row) => {
-    const cells = row.querySelectorAll("span");
-    return {
-      team: cells[0]?.textContent.trim() || "-",
-      progress: cells[1]?.textContent.trim() || "-",
-    };
-  });
+  const assignedTeams = getAssignedTeamsFromCard(card).map((team) => ({
+    team: team.label,
+    completedTasks: team.completedTasks,
+    memberCount: getTeamMemberCountFromLabel(team.label),
+  }));
 
   if (modalTeamList) {
     const withMainTag = assignedTeams.map((team) => ({
@@ -2417,12 +2985,17 @@ const openAssignedTeamsModal = (card) => {
       const picked = eligible[Math.floor(Math.random() * eligible.length)];
       withMainTag[picked.index].label = `${picked.team} - Main Team`;
     }
-    const dockMarkup = buildDockMeterMarkup(getDockCountForCard(card));
     modalTeamList.innerHTML = withMainTag.length
       ? withMainTag
           .map(
             (team) =>
-              `<li><span>${team.label}</span>${dockMarkup}</li>`
+              `<li class="modal-assigned-team-row" data-team-members="true" data-team-members-label="${escapeHtml(
+                team.team
+              )}" data-team-members-count="${team.memberCount}" role="button" tabindex="0"><span>${escapeHtml(
+                team.label
+              )}</span><span class="team-progress-wrap">${buildTaskProgressMarkup(
+                team.completedTasks
+              )}${buildTaskInfoButtonMarkup(team.team, team.completedTasks)}</span></li>`
           )
           .join("")
       : "<li><span>No assigned teams</span><span>-</span></li>";
@@ -2706,6 +3279,7 @@ const applyRtWindowFilter = () => {
     card.classList.toggle("is-hidden", !isWithinWindow);
   });
   applySinglePullAlert();
+  applyZeroTaskBlinking();
   applySingleGateChangeAlert();
   updateScreeningTypes();
   applySinglePatdownAlert();
@@ -2767,12 +3341,6 @@ const getNextGateCandidates = (card) => {
   return candidates.length ? candidates : [card];
 };
 
-const getTeamMemberCountFromLabel = (label) => {
-  const match = label.match(/\((\d+)\)/);
-  const count = match ? Number(match[1]) : 3;
-  return Number.isFinite(count) && count > 0 ? count : 3;
-};
-
 const buildPullTeams = (card) => {
   if (!card) return [];
   const rows = Array.from(card.querySelectorAll(".flight-progress .progress-row"));
@@ -2808,6 +3376,8 @@ const buildPullTeams = (card) => {
 };
 
 const closeModal = () => {
+  closeTaskingOverlay();
+  closeTeamMemberOverlay();
   if (!modal || !modalBackdrop) return;
   modalBackdrop.classList.remove("is-visible");
   modal.classList.remove("is-visible");
@@ -2990,6 +3560,16 @@ if (modalAssignedComplete) {
 
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
+  if (isTeamMemberOverlayVisible()) {
+    closeTeamMemberOverlay();
+    event.stopImmediatePropagation();
+    return;
+  }
+  if (isTaskingOverlayVisible()) {
+    closeTaskingOverlay();
+    event.stopImmediatePropagation();
+    return;
+  }
   if (modal && modal.classList.contains("is-visible")) {
     closeModal();
     event.stopImmediatePropagation();
