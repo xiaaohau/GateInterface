@@ -584,31 +584,8 @@ const setupRunnerDevice = (device) => {
 
 allDevices.forEach(setupRunnerDevice);
 
-const RUNNER_UNASSIGNED_FALLBACK_COUNT = 4;
-
-const sortRunnerFlightsByEtd = (flights) =>
-  [...flights].sort((a, b) => {
-    const aMinutes = parseHrsToMinutes(a.etd);
-    const bMinutes = parseHrsToMinutes(b.etd);
-    const aSort = aMinutes === null ? Number.MAX_SAFE_INTEGER : aMinutes;
-    const bSort = bMinutes === null ? Number.MAX_SAFE_INTEGER : bMinutes;
-    return aSort - bSort;
-  });
-
-const pickRandomRunnerFlights = (flights, count) => {
-  const shuffled = [...flights];
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[randomIndex]] = [
-      shuffled[randomIndex],
-      shuffled[index],
-    ];
-  }
-  return shuffled.slice(0, Math.max(0, count));
-};
-
-const getRunnerFlights = () => {
-  const normalizedFlights = readLiveFlightsFromStorage()
+const getRunnerFlights = () =>
+  readLiveFlightsFromStorage()
     .filter((flight) => flight && typeof flight === "object")
     .map((flight, index) => {
       const id = normalizeStorageLabel(flight.id || `flight-${index + 1}`);
@@ -659,27 +636,15 @@ const getRunnerFlights = () => {
         pullCompleted,
         closeCompleted,
       };
+    })
+    .filter((flight) => flight.assignedFs)
+    .sort((a, b) => {
+      const aMinutes = parseHrsToMinutes(a.etd);
+      const bMinutes = parseHrsToMinutes(b.etd);
+      const aSort = aMinutes === null ? Number.MAX_SAFE_INTEGER : aMinutes;
+      const bSort = bMinutes === null ? Number.MAX_SAFE_INTEGER : bMinutes;
+      return aSort - bSort;
     });
-
-  const assignedFlights = normalizedFlights.filter((flight) => flight.assignedFs);
-  if (assignedFlights.length) {
-    return sortRunnerFlightsByEtd(assignedFlights);
-  }
-
-  const activeFlights = normalizedFlights.filter(
-    (flight) => flight.status !== "completed"
-  );
-  const fallbackPool = activeFlights.length ? activeFlights : normalizedFlights;
-  if (!fallbackPool.length) return [];
-
-  const fallbackCount = Math.min(
-    RUNNER_UNASSIGNED_FALLBACK_COUNT,
-    fallbackPool.length
-  );
-  return sortRunnerFlightsByEtd(
-    pickRandomRunnerFlights(fallbackPool, fallbackCount)
-  );
-};
 
 const splitFlightsAcrossDevices = (flights, deviceCount) => {
   if (deviceCount <= 0) return [];
